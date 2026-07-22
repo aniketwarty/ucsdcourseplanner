@@ -1,0 +1,75 @@
+export const DAY_CODES = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] as const;
+
+export type DayCode = (typeof DAY_CODES)[number];
+
+export interface Course {
+  academicYear: 2026;
+  academicPeriod: 2;
+  academicYearText: "2026/2027";
+  academicPeriodText: "Fall Quarter";
+  moduleId: string;
+  academicLevel: string;
+  departmentAbbr: string;
+  departmentText: string;
+  courseAbbr: string;
+  courseTitle: string;
+  credits: string | number;
+  incrementDisplay: string;
+  description: string | null;
+}
+
+export interface Meeting {
+  eventId: string;
+  type: string;
+  instructorName: string;
+  instructorEmail: string;
+  location: string;
+  status: string;
+  days: DayCode[];
+  startTime: string | null;
+  endTime: string | null;
+  beginDate: string;
+  endDate: string;
+  rawSchedule: string;
+}
+
+export interface FinalExam {
+  date: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  location: string | null;
+  rawSchedule: string;
+}
+
+export interface SectionGroup {
+  id: string;
+  label: string;
+  courseAbbr: string;
+  meetings: Meeting[];
+  finalExam: FinalExam | null;
+  seatsAvailable: number;
+  capacity: number;
+  enrolled: number;
+  waitlistCount: number;
+}
+
+export interface ErrorDetail {
+  code: string;
+  message: string;
+}
+
+export interface ErrorResponse {
+  error: ErrorDetail;
+}
+
+export interface SessionStatusResponse {
+  connected: boolean;
+}
+
+export interface CourseSearchResponse {
+  courses: Course[];
+}
+
+export interface SectionsResponse {
+  sections: SectionGroup[];
+}
