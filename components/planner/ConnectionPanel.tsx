@@ -79,7 +79,7 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
             </span>
             Secure TSS connection
           </div>
-          <h1 id="connection-title">Bring your schedule into focus.</h1>
+          <h1 id="connection-title">Connect your UCSD account</h1>
           <p id="connection-description" className="connection-lede">
             Connect your active Triton Student System session to search live
             course sections. Your credential is used only to establish this
@@ -89,10 +89,9 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
             <strong>Why do I need to paste a cookie?</strong>
             <p>
               A cookie is a short-lived sign-in pass your browser gets after you
-              log into TSS. This planner is a separate site, so it cannot see
-              that you are already signed in. Pasting that pass lets the planner
-              look up live course times and seats for you—without storing your
-              UCSD password.
+              log into TSS. This website uses the TSS search API to look up live
+              course times and seats which requires a valid login. The session cookie 
+              is used to authenticate requests to the TSS search API without needing your password.
             </p>
           </div>
           {notice ? (
@@ -136,15 +135,6 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
               </div>
             </li>
           </ol>
-
-          <div className="security-note">
-            <Icon name="alert" size={18} />
-            <p>
-              <strong>Treat this value like a password.</strong> Never share it
-              in chat, email, screenshots, or source control. Disconnect when
-              using a shared device.
-            </p>
-          </div>
 
           <form className="connection-form" onSubmit={connect}>
             <label htmlFor="session-cookie">SAP session cookie</label>

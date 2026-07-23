@@ -3,47 +3,47 @@
 import type { EventContentArg } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import type { PlannedPackage } from "@/lib/planner";
+import type { CalendarMode, PlannedPackage } from "@/lib/planner";
 import { toCalendarEvents } from "@/lib/planner";
+import type { AcademicTerm } from "@/lib/tss/terms";
 import { Icon } from "./Icons";
 
-export function ScheduleCalendar({ planned }: { planned: PlannedPackage[] }) {
-  const events = toCalendarEvents(planned);
+type ScheduleCalendarProps = {
+  term: AcademicTerm;
+  planned: PlannedPackage[];
+  mode: CalendarMode;
+  onRemove?: (id: string) => void;
+};
+
+export function ScheduleCalendar({
+  term,
+  planned,
+  mode,
+  onRemove,
+}: ScheduleCalendarProps) {
+  const events = toCalendarEvents(planned, mode, {
+    start: term.finalsStart,
+    end: term.finalsEnd,
+  });
+  const isFinals = mode === "finals";
 
   return (
-    <div className="calendar-shell">
-      <div className="calendar-titlebar">
-        <div>
-          <span className="step-kicker">Weekly schedule</span>
-          <h2>September 28 – October 2</h2>
-        </div>
-        <div className="calendar-legend">
-          <span>
-            <i className="legend-dot planned" />
-            Planned
-          </span>
-          <span>
-            <i className="legend-dot conflict" />
-            Conflict
-          </span>
-        </div>
-      </div>
-
-      {planned.length === 0 ? (
-        <div className="calendar-empty-note">
-          <Icon name="plus" size={16} />
-          Add a section package to place it on your week
-        </div>
-      ) : null}
-
-      <div className="calendar-scroll" aria-label="Fall 2026 weekly course schedule">
+    <div className={`calendar-shell ${isFinals ? "is-finals" : ""}`}>
+      <div
+        className="calendar-scroll"
+        aria-label={
+          isFinals
+            ? `${term.shortLabel} finals schedule`
+            : `${term.shortLabel} weekly course schedule`
+        }
+      >
         <div className="calendar-min-width">
           <FullCalendar
             allDaySlot={false}
-            dayHeaderFormat={{ weekday: "short", day: "numeric" }}
+            dayHeaderFormat={{ weekday: "short" }}
             dayHeaderClassNames="planner-day-header"
             editable={false}
-            eventContent={renderEvent}
+            eventContent={(info) => renderEvent(info, onRemove)}
             eventDidMount={(info) => {
               const props = info.event.extendedProps;
               const conflictText = props.conflict ? ", schedule conflict" : "";
@@ -55,14 +55,17 @@ export function ScheduleCalendar({ planned }: { planned: PlannedPackage[] }) {
             }}
             events={events}
             expandRows
-            firstDay={1}
+            firstDay={isFinals ? 6 : 1}
             headerToolbar={false}
             height="auto"
-            initialDate="2026-09-28"
+            hiddenDays={isFinals ? [0] : undefined}
+            initialDate={isFinals ? term.finalsStart : term.calendarStart}
             initialView="timeGridWeek"
+            key={`${mode}-${term.id}`}
             nowIndicator={false}
             plugins={[timeGridPlugin]}
             slotDuration="00:30:00"
+            slotEventOverlap
             slotLabelFormat={{
               hour: "numeric",
               minute: "2-digit",
@@ -71,7 +74,7 @@ export function ScheduleCalendar({ planned }: { planned: PlannedPackage[] }) {
             }}
             slotMaxTime="22:00:00"
             slotMinTime="07:00:00"
-            weekends={false}
+            weekends={isFinals}
           />
         </div>
       </div>
@@ -79,7 +82,10 @@ export function ScheduleCalendar({ planned }: { planned: PlannedPackage[] }) {
   );
 }
 
-function renderEvent(info: EventContentArg) {
+function renderEvent(
+  info: EventContentArg,
+  onRemove?: (id: string) => void,
+) {
   const props = info.event.extendedProps;
   return (
     <div className="calendar-event-content">
@@ -87,6 +93,20 @@ function renderEvent(info: EventContentArg) {
       <span>{props.meetingType}</span>
       <small>{props.location || "TBA"}</small>
       {props.conflict ? <Icon name="alert" size={12} /> : null}
+      {onRemove ? (
+        <button
+          aria-label={`Remove ${props.courseAbbr}`}
+          className="calendar-event-remove"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onRemove(props.packageId);
+          }}
+          type="button"
+        >
+          ×
+        </button>
+      ) : null}
     </div>
   );
 }

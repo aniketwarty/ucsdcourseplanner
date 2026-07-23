@@ -9,7 +9,6 @@ import {
 } from "./auth";
 import {
   COURSE_RESULT_LIMIT,
-  FIXED_TERM,
   SAP_CLIENT,
   TSS_BASE_URL,
   TSS_TIMEOUT_MS,
@@ -25,6 +24,7 @@ import {
   buildSectionsPath,
 } from "./odata";
 import { mapSectionGroups } from "./schedule";
+import type { AcademicTerm } from "./terms";
 import type { Course, SectionGroup } from "./types";
 
 type TssRecord = Record<string, unknown>;
@@ -62,9 +62,10 @@ export class TssClient {
   async searchCourses(
     query: string,
     credentials: TssCredentials,
+    term: AcademicTerm,
   ): Promise<Course[]> {
     const boundary = `batch_${randomUUID().replaceAll("-", "")}`;
-    const body = buildBatchBody(buildCourseSearchPath(query), boundary);
+    const body = buildBatchBody(buildCourseSearchPath(query, term), boundary);
     const response = await this.request(
       `${TSS_BASE_URL}/$batch?sap-client=${SAP_CLIENT}`,
       {
@@ -84,15 +85,16 @@ export class TssClient {
       await response.text(),
       response.headers.get("content-type"),
     );
-    return mapCourses(payload).slice(0, COURSE_RESULT_LIMIT);
+    return mapCourses(payload, term).slice(0, COURSE_RESULT_LIMIT);
   }
 
   async getSections(
     moduleId: string,
     credentials: TssCredentials,
+    term: AcademicTerm,
   ): Promise<SectionGroup[]> {
     const response = await this.request(
-      `${TSS_BASE_URL}/${buildSectionsPath(moduleId)}`,
+      `${TSS_BASE_URL}/${buildSectionsPath(moduleId, term)}`,
       {
         method: "GET",
         headers: {
@@ -126,7 +128,7 @@ export class TssClient {
   }
 }
 
-export function mapCourses(data: unknown): Course[] {
+export function mapCourses(data: unknown, term: AcademicTerm): Course[] {
   return extractRecords(data)
     .map((record): Course | null => {
       const moduleId = text(record, "ModuleID", "ModuleId", "moduleId");
@@ -151,10 +153,10 @@ export function mapCourses(data: unknown): Course[] {
         ) || courseAbbr;
 
       return {
-        academicYear: FIXED_TERM.academicYear,
-        academicPeriod: FIXED_TERM.academicPeriod,
-        academicYearText: FIXED_TERM.academicYearText,
-        academicPeriodText: FIXED_TERM.academicPeriodText,
+        academicYear: term.academicYear,
+        academicPeriod: term.academicPeriod,
+        academicYearText: term.academicYearText,
+        academicPeriodText: term.academicPeriodText,
         moduleId,
         academicLevel: text(record, "AcademicLevel", "AcadLevel"),
         departmentAbbr: text(

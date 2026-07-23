@@ -3,10 +3,10 @@ export const DAY_CODES = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] as const;
 export type DayCode = (typeof DAY_CODES)[number];
 
 export interface Course {
-  academicYear: 2026;
-  academicPeriod: 2;
-  academicYearText: "2026/2027";
-  academicPeriodText: "Fall Quarter";
+  academicYear: number;
+  academicPeriod: number;
+  academicYearText: string;
+  academicPeriodText: string;
   moduleId: string;
   academicLevel: string;
   departmentAbbr: string;

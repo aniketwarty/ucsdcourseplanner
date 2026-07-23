@@ -93,7 +93,25 @@ const DAY_INDEX: Record<DayCode, number> = {
   FR: 5,
   SA: 6,
 };
-const COLORS = ["#00629b", "#173f5f", "#5b3f8c", "#287271", "#3d5a80"];
+const DAY_SHORT: Record<DayCode, string> = {
+  MO: "M",
+  TU: "Tu",
+  WE: "W",
+  TH: "Th",
+  FR: "F",
+  SA: "Sa",
+  SU: "Su",
+};
+const COLORS = [
+  { border: "#182B49", background: "#E8EBF0", text: "#1C2536" },
+  { border: "#00629B", background: "#E2ECF3", text: "#1C2536" },
+  { border: "#4C7A34", background: "#EAF1E5", text: "#1C2536" },
+  { border: "#0093A8", background: "#E1F2F4", text: "#1C2536" },
+  { border: "#5B3F8C", background: "#EDE8F4", text: "#1C2536" },
+] as const;
+
+export type CalendarMode = "classes" | "finals";
+export type CourseColor = (typeof COLORS)[number];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -325,41 +343,37 @@ function meetingsOverlap(a: Meeting, b: Meeting): boolean {
 }
 
 function scheduleMeetings(section: SectionGroup): Meeting[] {
-  const exam = section.finalExam;
-  if (!exam?.date || !exam.startTime || !exam.endTime) return section.meetings;
-  const dayIndex = new Date(`${exam.date}T12:00:00Z`).getUTCDay();
-  const day = (Object.keys(DAY_INDEX) as DayCode[]).find(
-    (code) => DAY_INDEX[code] === dayIndex,
-  );
-  if (!day) return section.meetings;
-  return [
-    ...section.meetings,
-    {
-      eventId: `final-${exam.date}`,
-      type: "Final exam",
-      instructorName: "",
-      instructorEmail: "",
-      location: exam.location || "Location TBA",
-      status: "",
-      days: [day],
-      startTime: exam.startTime,
-      endTime: exam.endTime,
-      beginDate: exam.date,
-      endDate: exam.date,
-      rawSchedule: exam.rawSchedule,
-    },
-  ];
+  const exam = finalMeeting(section);
+  if (!exam) return section.meetings;
+  return [...section.meetings, exam];
 }
 
-export function detectConflicts(packages: PlannedPackage[]): Set<string> {
+export type ConflictScope = "classes" | "finals" | "all";
+
+function meetingsForConflictScope(
+  section: SectionGroup,
+  scope: ConflictScope,
+): Meeting[] {
+  if (scope === "classes") return section.meetings;
+  if (scope === "finals") {
+    const exam = finalMeeting(section);
+    return exam ? [exam] : [];
+  }
+  return scheduleMeetings(section);
+}
+
+export function detectConflicts(
+  packages: PlannedPackage[],
+  scope: ConflictScope = "all",
+): Set<string> {
   const conflicts = new Set<string>();
   for (let left = 0; left < packages.length; left += 1) {
     for (let right = left + 1; right < packages.length; right += 1) {
       const a = packages[left];
       const b = packages[right];
       if (
-        scheduleMeetings(a.section).some((meetingA) =>
-          scheduleMeetings(b.section).some((meetingB) =>
+        meetingsForConflictScope(a.section, scope).some((meetingA) =>
+          meetingsForConflictScope(b.section, scope).some((meetingB) =>
             meetingsOverlap(meetingA, meetingB),
           ),
         )
@@ -378,34 +392,138 @@ function addDays(date: string, days: number): string {
   return parsed.toISOString().slice(0, 10);
 }
 
-function colorFor(value: string): string {
+function colorFor(value: string): CourseColor {
   let hash = 0;
   for (const character of value) hash = (hash * 31 + character.charCodeAt(0)) | 0;
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-export function toCalendarEvents(packages: PlannedPackage[]): CalendarEvent[] {
-  const conflicts = detectConflicts(packages);
-  return packages.flatMap((item) =>
-    scheduleMeetings(item.section).flatMap((meeting, index) => {
+export function courseColor(moduleId: string): CourseColor {
+  return colorFor(moduleId);
+}
+
+export function findSectionConflicts(
+  section: SectionGroup,
+  planned: PlannedPackage[],
+  excludePackageId?: string,
+): PlannedPackage[] {
+  return planned.filter((item) => {
+    if (excludePackageId && item.id === excludePackageId) return false;
+    return section.meetings.some((meetingA) =>
+      item.section.meetings.some((meetingB) => meetingsOverlap(meetingA, meetingB)),
+    );
+  });
+}
+
+function formatClock(time: string): string {
+  const [hourRaw, minute] = time.split(":").map(Number);
+  const suffix = hourRaw >= 12 ? "p" : "a";
+  const hour = ((hourRaw + 11) % 12) + 1;
+  return minute === 0 ? `${hour}${suffix}` : `${hour}:${String(minute).padStart(2, "0")}${suffix}`;
+}
+
+export function formatMeetingSummary(meeting: Meeting): string {
+  if (!meeting.startTime || !meeting.endTime) {
+    return meeting.rawSchedule || "Time TBA";
+  }
+  const days = meeting.days.map((day) => DAY_SHORT[day]).join("");
+  return `${days || "TBA"} ${formatClock(meeting.startTime)}`;
+}
+
+export function sectionTimeSummary(section: SectionGroup): string {
+  if (section.meetings.length === 0) return "TBA";
+  return section.meetings.map(formatMeetingSummary).join("   ·   ");
+}
+
+export function sectionInstructor(section: SectionGroup): string {
+  return (
+    section.meetings.find((meeting) => meeting.instructorName.trim())?.instructorName ||
+    "Instructor TBA"
+  );
+}
+
+export function sectionLocation(section: SectionGroup): string {
+  return (
+    section.meetings.find((meeting) => meeting.location.trim())?.location || "Location TBA"
+  );
+}
+
+export function formatFinalLabel(section: SectionGroup): string {
+  const exam = section.finalExam;
+  if (!exam?.date || !exam.startTime || !exam.endTime) return "No final";
+  const dayIndex = new Date(`${exam.date}T12:00:00Z`).getUTCDay();
+  const day = (Object.keys(DAY_INDEX) as DayCode[]).find(
+    (code) => DAY_INDEX[code] === dayIndex,
+  );
+  const dayLabel = day ? DAY_SHORT[day] : exam.date;
+  return `${dayLabel} ${formatClock(exam.startTime)}–${formatClock(exam.endTime)}`;
+}
+
+function finalMeeting(section: SectionGroup): Meeting | null {
+  const exam = section.finalExam;
+  if (!exam?.date || !exam.startTime || !exam.endTime) return null;
+  const dayIndex = new Date(`${exam.date}T12:00:00Z`).getUTCDay();
+  const day = (Object.keys(DAY_INDEX) as DayCode[]).find(
+    (code) => DAY_INDEX[code] === dayIndex,
+  );
+  if (!day) return null;
+  return {
+    eventId: `final-${exam.date}`,
+    type: "Final exam",
+    instructorName: "",
+    instructorEmail: "",
+    location: exam.location || "Location TBA",
+    status: "",
+    days: [day],
+    startTime: exam.startTime,
+    endTime: exam.endTime,
+    beginDate: exam.date,
+    endDate: exam.date,
+    rawSchedule: exam.rawSchedule,
+  };
+}
+
+export type FinalsWindow = {
+  start: string;
+  end: string;
+};
+
+export function toCalendarEvents(
+  packages: PlannedPackage[],
+  mode: CalendarMode = "classes",
+  finalsWindow?: FinalsWindow,
+): CalendarEvent[] {
+  const conflicts = detectConflicts(
+    packages,
+    mode === "finals" ? "finals" : "classes",
+  );
+  const finalsStart = finalsWindow?.start ?? "2026-12-05";
+  const finalsEnd = finalsWindow?.end ?? "2026-12-12";
+  return packages.flatMap((item) => {
+    const meetings =
+      mode === "finals"
+        ? ([finalMeeting(item.section)].filter(Boolean) as Meeting[])
+        : item.section.meetings;
+    const color = colorFor(item.course.moduleId);
+    return meetings.flatMap((meeting, index) => {
       if (!meeting.startTime || !meeting.endTime || meeting.days.length === 0) {
         return [];
       }
       const conflict = conflicts.has(item.id);
-      const color = conflict ? "#b42318" : colorFor(item.course.moduleId);
       return [
         {
-          id: `${item.id}:${meeting.eventId || index}`,
+          id: `${item.id}:${meeting.eventId || index}:${mode}`,
           groupId: item.id,
           title: `${item.course.courseAbbr} · ${meeting.type}`,
           daysOfWeek: meeting.days.map((day) => DAY_INDEX[day]),
           startTime: meeting.startTime,
           endTime: meeting.endTime,
-          startRecur: meeting.beginDate,
-          endRecur: addDays(meeting.endDate, 1),
-          backgroundColor: color,
-          borderColor: color,
-          textColor: "#ffffff",
+          startRecur: mode === "finals" ? finalsStart : meeting.beginDate,
+          endRecur:
+            mode === "finals" ? finalsEnd : addDays(meeting.endDate, 1),
+          backgroundColor: conflict ? "#FCEEEC" : color.background,
+          borderColor: conflict ? "#B42318" : color.border,
+          textColor: conflict ? "#7A1F18" : color.text,
           classNames: conflict ? ["planner-event", "is-conflict"] : ["planner-event"],
           extendedProps: {
             packageId: item.id,
@@ -417,8 +535,8 @@ export function toCalendarEvents(packages: PlannedPackage[]): CalendarEvent[] {
           },
         },
       ];
-    }),
-  );
+    });
+  });
 }
 
 function escapeIcs(value: string): string {
@@ -456,7 +574,10 @@ function foldIcsLine(line: string): string {
   return chunks.join("\r\n");
 }
 
-export function generateIcs(packages: PlannedPackage[]): string {
+export function generateIcs(
+  packages: PlannedPackage[],
+  calendarName = "UCSD Course Plan",
+): string {
   const created = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const lines = [
     "BEGIN:VCALENDAR",
@@ -464,7 +585,7 @@ export function generateIcs(packages: PlannedPackage[]): string {
     "PRODID:-//UCSD Course Planner//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Fall 2026 Course Plan",
+    `X-WR-CALNAME:${escapeIcs(calendarName)}`,
     "X-WR-TIMEZONE:America/Los_Angeles",
   ];
   for (const item of packages) {

@@ -1,9 +1,6 @@
 import { AppError } from "./errors";
-import {
-  COURSE_RESULT_LIMIT,
-  FIXED_TERM,
-  SAP_CLIENT,
-} from "./constants";
+import { COURSE_RESULT_LIMIT, SAP_CLIENT } from "./constants";
+import type { AcademicTerm } from "./terms";
 
 const MODULE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._~/-]{0,127}$/;
 const COURSE_SELECT_FIELDS = [
@@ -34,14 +31,17 @@ export function escapeODataString(value: string): string {
   return value.replaceAll("'", "''");
 }
 
-export function buildCourseSearchPath(query: string): string {
+export function buildCourseSearchPath(
+  query: string,
+  term: AcademicTerm,
+): string {
   const searchPhrase = query
     .trim()
     .replaceAll("\\", "\\\\")
     .replaceAll('"', '\\"');
   const filter =
-    `AcYearText eq '${escapeODataString(FIXED_TERM.academicYearText)}' ` +
-    `and AcademicPeriodText eq '${escapeODataString(FIXED_TERM.academicPeriodText)}'`;
+    `AcYearText eq '${escapeODataString(term.academicYearText)}' ` +
+    `and AcademicPeriodText eq '${escapeODataString(term.academicPeriodText)}'`;
 
   const params = new URLSearchParams({
     "sap-client": SAP_CLIENT,
@@ -55,11 +55,14 @@ export function buildCourseSearchPath(query: string): string {
   return `YUCSD_CON_MODULE?${params.toString()}`;
 }
 
-export function buildSectionsPath(moduleId: string): string {
+export function buildSectionsPath(
+  moduleId: string,
+  term: AcademicTerm,
+): string {
   const safeModuleId = assertModuleId(moduleId);
   const keys = [
-    `AcademicYear='${FIXED_TERM.academicYear}'`,
-    `AcademicPeriod='${FIXED_TERM.academicPeriod}'`,
+    `AcademicYear='${term.academicYear}'`,
+    `AcademicPeriod='${term.academicPeriod}'`,
     `ModuleID='${encodeURIComponent(safeModuleId)}'`,
   ].join(",");
   return `YUCSD_CON_MODULE(${keys})/_sections?sap-client=${SAP_CLIENT}&$skip=0&$top=1000`;

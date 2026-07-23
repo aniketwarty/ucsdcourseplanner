@@ -3,12 +3,7 @@ export const TSS_BASE_URL =
 
 export const SAP_CLIENT = "500";
 
-export const FIXED_TERM = {
-  academicYear: 2026,
-  academicPeriod: 2,
-  academicYearText: "2026/2027",
-  academicPeriodText: "Fall Quarter",
-} as const;
+export { getCurrentTerm as defaultTerm } from "./terms";
 
 export const TSS_TIMEOUT_MS = 10_000;
 export const COURSE_RESULT_LIMIT = 30;

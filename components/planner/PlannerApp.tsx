@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   loadPlanner,
   makePackage,
@@ -9,22 +9,32 @@ import {
   type PlannedPackage,
   type SectionGroup,
 } from "@/lib/planner";
+import {
+  getCurrentTerm,
+  isSameTerm,
+} from "@/lib/tss/terms";
 import { ConnectionPanel } from "./ConnectionPanel";
 import { CourseSearch } from "./CourseSearch";
 import { Icon } from "./Icons";
+import { PlanPane, type PlanView } from "./PlanPane";
 import { ProjectLinks } from "./ProjectLinks";
-import { PlanSummary } from "./PlanSummary";
-import { ScheduleCalendar } from "./ScheduleCalendar";
 
 type AuthState = "checking" | "connected" | "disconnected";
 
 export function PlannerApp() {
+  const term = useMemo(() => getCurrentTerm(), []);
   const [auth, setAuth] = useState<AuthState>("checking");
   const [authNotice, setAuthNotice] = useState("");
   const [planned, setPlanned] = useState<PlannedPackage[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [appMessage, setAppMessage] = useState("");
+  const [planView, setPlanView] = useState<PlanView>("calendar");
+
+  const termPlanned = useMemo(
+    () => planned.filter((item) => isSameTerm(item.course, term)),
+    [planned, term],
+  );
 
   useEffect(() => {
     const storageTimer = window.setTimeout(() => {
@@ -87,6 +97,12 @@ export function PlannerApp() {
     setPlanned((current) => current.filter((item) => item.id !== id));
   }
 
+  function clearTermPlan() {
+    setPlanned((current) =>
+      current.filter((item) => !isSameTerm(item.course, term)),
+    );
+  }
+
   async function disconnect() {
     setDisconnecting(true);
     setAppMessage("");
@@ -109,24 +125,14 @@ export function PlannerApp() {
     <div className="planner-app">
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
           <div>
-            <strong>Triton Planner</strong>
-            <span>UC San Diego course planning</span>
+            <span className="brand-eyebrow">UC San Diego</span>
+            <strong>Schedule Planner</strong>
           </div>
         </div>
 
         <div className="header-actions">
           <ProjectLinks />
-          <div className="term-badge" aria-label="Planning term Fall 2026">
-            <Icon name="calendar" size={15} />
-            <span>Fall 2026</span>
-            <small>Fixed term</small>
-          </div>
           <div
             className={`connection-status ${auth === "connected" ? "is-connected" : ""}`}
             role="status"
@@ -148,6 +154,9 @@ export function PlannerApp() {
               {disconnecting ? "Disconnecting…" : "Disconnect"}
             </button>
           ) : null}
+          <div className="term-badge" aria-label={`Planning term ${term.shortLabel}`}>
+            {term.shortLabel}
+          </div>
         </div>
       </header>
 
@@ -166,16 +175,17 @@ export function PlannerApp() {
           onAdd={addPackage}
           onRemove={removePackage}
           onSessionExpired={handleSessionExpired}
-          planned={planned}
+          planned={termPlanned}
+          term={term}
         />
-        <div className="schedule-area">
-          <ScheduleCalendar planned={planned} />
-          <PlanSummary
-            onClear={() => setPlanned([])}
-            onRemove={removePackage}
-            planned={planned}
-          />
-        </div>
+        <PlanPane
+          onClear={clearTermPlan}
+          onRemove={removePackage}
+          onViewChange={setPlanView}
+          planned={termPlanned}
+          term={term}
+          view={planView}
+        />
       </main>
 
       {auth === "checking" ? (

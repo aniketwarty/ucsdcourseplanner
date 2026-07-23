@@ -8,9 +8,14 @@ import { requireRequestSession } from "@/lib/api/session";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSessionStore } from "@/lib/session/store";
 import { TssClient } from "@/lib/tss/client";
-import { FIXED_TERM, SESSION_COOKIE_NAME } from "@/lib/tss/constants";
+import { SESSION_COOKIE_NAME } from "@/lib/tss/constants";
 import { AppError, isSessionExpiredError } from "@/lib/tss/errors";
 import { assertModuleId } from "@/lib/tss/odata";
+import {
+  getCurrentTerm,
+  parseTermParams,
+  type AcademicTerm,
+} from "@/lib/tss/terms";
 import type { SectionsResponse } from "@/lib/tss/types";
 
 export const runtime = "nodejs";
@@ -32,7 +37,7 @@ export async function GET(
     store = createSessionStore();
     const session = await requireRequestSession(request, store);
 
-    validateTerm(request.nextUrl.searchParams);
+    const term = resolveTerm(request.nextUrl.searchParams);
 
     const { moduleId } = await context.params;
     assertModuleId(moduleId);
@@ -40,6 +45,7 @@ export async function GET(
     const sections = await new TssClient().getSections(
       moduleId,
       session.credentials,
+      term,
     );
     return NextResponse.json<SectionsResponse>({ sections });
   } catch (error) {
@@ -59,17 +65,18 @@ export async function GET(
   }
 }
 
-function validateTerm(searchParams: URLSearchParams): void {
+function resolveTerm(searchParams: URLSearchParams): AcademicTerm {
   const year = searchParams.get("year");
   const period = searchParams.get("period");
-  if (
-    (year !== null && year !== String(FIXED_TERM.academicYear)) ||
-    (period !== null && period !== String(FIXED_TERM.academicPeriod))
-  ) {
+  if (year === null && period === null) return getCurrentTerm();
+
+  const term = parseTermParams(year, period);
+  if (!term) {
     throw new AppError(
       "UNSUPPORTED_TERM",
-      "Only Fall Quarter 2026 is supported.",
+      "The requested academic term is not available in TSS.",
       400,
     );
   }
+  return term;
 }

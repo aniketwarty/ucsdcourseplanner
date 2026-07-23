@@ -10,7 +10,12 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSessionStore } from "@/lib/session/store";
 import { TssClient } from "@/lib/tss/client";
 import { SESSION_COOKIE_NAME } from "@/lib/tss/constants";
-import { isSessionExpiredError } from "@/lib/tss/errors";
+import { AppError, isSessionExpiredError } from "@/lib/tss/errors";
+import {
+  getCurrentTerm,
+  parseTermParams,
+  type AcademicTerm,
+} from "@/lib/tss/terms";
 import type { CourseSearchResponse } from "@/lib/tss/types";
 
 export const runtime = "nodejs";
@@ -42,9 +47,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const term = resolveTerm(request.nextUrl.searchParams);
     const courses = await new TssClient().searchCourses(
       parsed.data,
       session.credentials,
+      term,
     );
     return NextResponse.json<CourseSearchResponse>({ courses });
   } catch (error) {
@@ -61,6 +68,22 @@ export async function GET(request: NextRequest) {
     }
     return response;
   }
+}
+
+function resolveTerm(searchParams: URLSearchParams): AcademicTerm {
+  const year = searchParams.get("year");
+  const period = searchParams.get("period");
+  if (year === null && period === null) return getCurrentTerm();
+
+  const term = parseTermParams(year, period);
+  if (!term) {
+    throw new AppError(
+      "UNSUPPORTED_TERM",
+      "The requested academic term is not available in TSS.",
+      400,
+    );
+  }
+  return term;
 }
 
 function createSessionStoreSafely(): () => ReturnType<
