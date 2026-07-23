@@ -1355,6 +1355,30 @@ a {
   line-height: 1.65;
 }
 
+
+.connection-why {
+  max-width: 460px;
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #d7e4ee;
+  border-radius: 9px;
+  background: #f5f9fc;
+}
+
+.connection-why strong {
+  display: block;
+  color: var(--navy-950);
+  font-size: 11px;
+  font-weight: 740;
+}
+
+.connection-why p {
+  margin: 4px 0 0;
+  color: var(--ink-500);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
 .session-notice {
   display: flex;
   margin-top: 13px;

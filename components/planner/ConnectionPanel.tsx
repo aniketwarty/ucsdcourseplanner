@@ -66,7 +66,7 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
   return (
     <div className="connection-backdrop" role="presentation">
       <section
-        aria-describedby="connection-description"
+        aria-describedby="connection-description connection-why"
         aria-labelledby="connection-title"
         aria-modal="true"
         className="connection-panel"
@@ -85,6 +85,16 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
             course sections. Your credential is used only to establish this
             session and is never saved to planner storage.
           </p>
+          <div className="connection-why" id="connection-why">
+            <strong>Why do I need to paste a cookie?</strong>
+            <p>
+              A cookie is a short-lived sign-in pass your browser gets after you
+              log into TSS. This planner is a separate site, so it cannot see
+              that you are already signed in. Pasting that pass lets the planner
+              look up live course times and seats for you—without storing your
+              UCSD password.
+            </p>
+          </div>
           {notice ? (
             <div className="session-notice" role="status">
               <Icon name="alert" size={16} />
