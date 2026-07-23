@@ -12,6 +12,7 @@ import {
 import { ConnectionPanel } from "./ConnectionPanel";
 import { CourseSearch } from "./CourseSearch";
 import { Icon } from "./Icons";
+import { ProjectLinks } from "./ProjectLinks";
 import { PlanSummary } from "./PlanSummary";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 
@@ -120,6 +121,7 @@ export function PlannerApp() {
         </div>
 
         <div className="header-actions">
+          <ProjectLinks />
           <div className="term-badge" aria-label="Planning term Fall 2026">
             <Icon name="calendar" size={15} />
             <span>Fall 2026</span>
