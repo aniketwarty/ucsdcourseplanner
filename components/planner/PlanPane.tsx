@@ -65,6 +65,22 @@ export function PlanPane({
     <section className="plan-pane" aria-label={`${term.shortLabel} plan`}>
       <div className="plan-pane-header">
         <span className="plan-pane-label">Your plan</span>
+        <div className="plan-stats" aria-label="Plan summary">
+          <div>
+            <strong>{Number.isInteger(credits) ? credits : credits.toFixed(1)}</strong>
+            <span>units</span>
+          </div>
+          <div>
+            <strong>{planned.length}</strong>
+            <span>{planned.length === 1 ? "class" : "classes"}</span>
+          </div>
+          {conflicts.size > 0 ? (
+            <div className="plan-conflict-badge" role="status">
+              <Icon name="alert" size={14} />
+              {conflicts.size} conflict{conflicts.size === 1 ? "" : "s"}
+            </div>
+          ) : null}
+        </div>
         <div className="view-toggle" role="tablist" aria-label="Plan view">
           {(
             [
@@ -186,43 +202,23 @@ export function PlanPane({
       </div>
 
       <div className="plan-pane-footer">
-        <div className="plan-footer-main">
-          <div className="plan-stats">
-            <div>
-              <strong>{Number.isInteger(credits) ? credits : credits.toFixed(1)}</strong>
-              <span>units</span>
-            </div>
-            <div>
-              <strong>{planned.length}</strong>
-              <span>{planned.length === 1 ? "class" : "classes"}</span>
-            </div>
-            {conflicts.size > 0 ? (
-              <div className="plan-conflict-badge" role="status">
-                <Icon name="alert" size={14} />
-                {conflicts.size} conflict{conflicts.size === 1 ? "" : "s"}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="plan-footer-actions">
-            {planned.length > 0 ? (
-              <button className="text-button danger" onClick={onClear} type="button">
-                Clear
-              </button>
-            ) : null}
-            <button
-              className="secondary-button"
-              disabled={planned.length === 0}
-              onClick={exportCalendar}
-              type="button"
-            >
-              <Icon name="download" size={15} />
-              Export .ics
+        <div className="plan-footer-actions">
+          {planned.length > 0 ? (
+            <button className="text-button danger" onClick={onClear} type="button">
+              Clear
             </button>
-          </div>
+          ) : null}
+          <button
+            className="secondary-button"
+            disabled={planned.length === 0}
+            onClick={exportCalendar}
+            type="button"
+          >
+            <Icon name="download" size={15} />
+            Export .ics
+          </button>
+          <ProjectLinks />
         </div>
-
-        <ProjectLinks />
       </div>
     </section>
   );

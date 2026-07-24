@@ -7,7 +7,14 @@ type ConnectionPanelProps = {
   open: boolean;
   notice?: string;
   onConnected: () => void;
+  onSkip: () => void;
 };
+
+const SKIP_LIMITATIONS = [
+  "Live course search",
+  "Loading new section times and seats",
+  "Refreshing saved courses from TSS",
+] as const;
 
 async function errorMessage(response: Response): Promise<string> {
   try {
@@ -20,7 +27,12 @@ async function errorMessage(response: Response): Promise<string> {
   }
 }
 
-export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelProps) {
+export function ConnectionPanel({
+  open,
+  notice,
+  onConnected,
+  onSkip,
+}: ConnectionPanelProps) {
   const [cookie, setCookie] = useState("");
   const [showCookie, setShowCookie] = useState(false);
   const [error, setError] = useState("");
@@ -103,36 +115,25 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
           <ol className="connection-steps">
             <li>
               <span>1</span>
-              <div>
-                <strong>Sign in to TSS</strong>
-                <p>
-                  Open{" "}
-                  <a href="https://tss.ucsd.edu/fiori" target="_blank" rel="noreferrer">
-                    tss.ucsd.edu/fiori
-                    <Icon name="external" size={13} />
-                  </a>{" "}
-                  and complete sign-in.
-                </p>
-              </div>
+              <p>
+                Sign in at{" "}
+                <a href="https://tss.ucsd.edu/fiori" target="_blank" rel="noreferrer">
+                  tss.ucsd.edu/fiori
+                  <Icon name="external" size={13} />
+                </a>
+              </p>
             </li>
             <li>
               <span>2</span>
-              <div>
-                <strong>Open browser DevTools</strong>
-                <p>
-                  Choose Application → Cookies → <b>tss.ucsd.edu</b>.
-                </p>
-              </div>
+              <p>
+                Inspect (Ctrl + Shift + I) → Application → Cookies → <b>tss.ucsd.edu</b>
+              </p>
             </li>
             <li>
               <span>3</span>
-              <div>
-                <strong>Copy the session value</strong>
-                <p>
-                  Find <code>SAP_SESSIONID_S4P_500</code> and copy only its
-                  value (not the name).
-                </p>
-              </div>
+              <p>
+                Copy the value of <code>SAP_SESSIONID_S4P_500</code>
+              </p>
             </li>
           </ol>
 
@@ -163,16 +164,36 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
               </button>
             </div>
             {error ? (
-              <p className="form-error" role="alert">
-                <Icon name="alert" size={15} />
-                {error}
-              </p>
+              <div className="form-error-block" role="alert">
+                <p className="form-error">
+                  <Icon name="alert" size={15} />
+                  {error}
+                </p>
+                <p className="form-error-hint">
+                  If this keeps failing, sign out of TSS and sign back in, then
+                  paste the fresh cookie value.
+                </p>
+              </div>
             ) : null}
             <button className="primary-button connect-button" disabled={submitting} type="submit">
               {submitting ? <span className="button-spinner" /> : <Icon name="lock" size={16} />}
               {submitting ? "Connecting…" : "Connect securely"}
             </button>
           </form>
+
+          <div className="connection-skip">
+            <button
+              className="text-button connection-skip-button"
+              disabled={submitting}
+              onClick={onSkip}
+              type="button"
+            >
+              Skip for now — view my plan
+            </button>
+            <p className="connection-skip-note">
+              Without connecting: {SKIP_LIMITATIONS.join(" · ")}.
+            </p>
+          </div>
         </div>
 
         <div className="devtools-illustration" aria-hidden="true">

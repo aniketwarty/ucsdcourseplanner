@@ -274,9 +274,83 @@ export function makePackage(course: Course, section: SectionGroup): PlannedPacka
   return {
     id: `${course.moduleId}:${section.id}`,
     course,
-    section,
+    section: normalizeSection(section),
     addedAt: new Date().toISOString(),
   };
+}
+
+/** Stable snapshot of a section for storage and change detection. */
+export function normalizeSection(section: SectionGroup): SectionGroup {
+  return {
+    id: section.id,
+    label: section.label,
+    courseAbbr: section.courseAbbr,
+    capacity: section.capacity,
+    seatsAvailable: section.seatsAvailable,
+    waitlistCount: section.waitlistCount,
+    meetings: section.meetings.map((meeting) => ({
+      eventId: meeting.eventId,
+      type: meeting.type,
+      instructorName: meeting.instructorName,
+      instructorEmail: meeting.instructorEmail,
+      location: meeting.location,
+      status: meeting.status,
+      days: [...meeting.days],
+      startTime: meeting.startTime,
+      endTime: meeting.endTime,
+      beginDate: meeting.beginDate,
+      endDate: meeting.endDate,
+      rawSchedule: meeting.rawSchedule,
+      ...(meeting.finalExam !== undefined
+        ? { finalExam: meeting.finalExam }
+        : {}),
+    })),
+    finalExam: section.finalExam
+      ? {
+          date: section.finalExam.date,
+          startTime: section.finalExam.startTime,
+          endTime: section.finalExam.endTime,
+          location: section.finalExam.location,
+          rawSchedule: section.finalExam.rawSchedule,
+        }
+      : section.finalExam ?? null,
+  };
+}
+
+export function sectionsEqual(a: SectionGroup, b: SectionGroup): boolean {
+  return JSON.stringify(normalizeSection(a)) === JSON.stringify(normalizeSection(b));
+}
+
+export type PlanRefreshResult = {
+  packages: PlannedPackage[];
+  updatedIds: string[];
+  missingIds: string[];
+};
+
+/**
+ * Merge fresh TSS sections into saved packages. Packages whose section id is
+ * no longer listed are left unchanged and reported in `missingIds`.
+ */
+export function refreshPlannedPackages(
+  packages: PlannedPackage[],
+  sectionsByModuleId: Record<string, SectionGroup[]>,
+): PlanRefreshResult {
+  const updatedIds: string[] = [];
+  const missingIds: string[] = [];
+  const next = packages.map((item) => {
+    const sections = sectionsByModuleId[item.course.moduleId];
+    if (!sections) return item;
+    const fresh = sections.find((section) => section.id === item.section.id);
+    if (!fresh) {
+      missingIds.push(item.id);
+      return item;
+    }
+    const normalized = normalizeSection(fresh);
+    if (sectionsEqual(item.section, normalized)) return item;
+    updatedIds.push(item.id);
+    return { ...item, section: normalized };
+  });
+  return { packages: next, updatedIds, missingIds };
 }
 
 export function serializePlanner(packages: PlannedPackage[]): string {

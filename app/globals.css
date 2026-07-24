@@ -91,16 +91,17 @@ a:hover {
 }
 
 .planner-app {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
-  position: sticky;
   z-index: 20;
-  top: 0;
   display: flex;
+  flex-shrink: 0;
   min-height: 64px;
   align-items: center;
   justify-content: space-between;
@@ -118,7 +119,6 @@ a:hover {
 .plan-pane-header,
 .plan-stats,
 .plan-footer-actions,
-.plan-footer-main,
 .course-block-heading,
 .plan-list-course {
   display: flex;
@@ -181,6 +181,15 @@ a:hover {
   box-shadow: 0 0 0 3px rgb(85 214 157 / 14%);
 }
 
+.connection-status.is-offline {
+  color: #ffe7a8;
+}
+
+.connection-status.is-offline > span {
+  background: #f0c14a;
+  box-shadow: 0 0 0 3px rgb(240 193 74 / 16%);
+}
+
 .disconnect-button {
   min-height: 34px;
   padding: 0 12px;
@@ -201,8 +210,10 @@ a:hover {
 .planner-workspace {
   display: grid;
   width: 100%;
-  min-height: calc(100vh - 64px);
+  flex: 1;
+  min-height: 0;
   margin: 0;
+  overflow: hidden;
   background: var(--surface);
   grid-template-columns: minmax(320px, 476px) minmax(0, 1fr);
 }
@@ -210,13 +221,16 @@ a:hover {
 .search-pane {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   border-right: 1px solid var(--line);
   background: var(--surface-soft);
 }
 
 .search-pane-top {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: 10px;
   padding: 16px 18px 12px;
@@ -321,7 +335,9 @@ a:hover {
 
 .search-results {
   flex: 1;
+  min-height: 0;
   padding: 0 14px 20px;
+  overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -357,44 +373,17 @@ a:hover {
   line-height: 1.6;
 }
 
-.catalog-mark {
-  position: relative;
-  width: 72px;
-  height: 58px;
+.search-examples {
+  margin: -2px 2px 0;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
-.catalog-mark span {
-  position: absolute;
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 1px solid #c9dce8;
-  border-radius: 10px;
-  color: var(--cobalt);
-  background: #eff8fc;
-  box-shadow: var(--shadow-sm);
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.catalog-mark span:first-child {
-  z-index: 3;
-  left: 0;
-  top: 12px;
-  transform: rotate(-7deg);
-}
-
-.catalog-mark span:nth-child(2) {
-  z-index: 2;
-  left: 19px;
-  top: 3px;
-}
-
-.catalog-mark span:last-child {
-  right: 0;
-  bottom: 1px;
-  transform: rotate(7deg);
+.search-example-code {
+  color: var(--muted);
+  font-family: var(--font-geist-mono), monospace;
+  font-weight: 550;
 }
 
 .empty-icon {
@@ -763,11 +752,15 @@ a:hover {
 .plan-pane {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   background: var(--surface);
 }
 
 .plan-pane-header {
+  flex-shrink: 0;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 13px 20px;
   border-bottom: 1px solid var(--line);
@@ -779,6 +772,11 @@ a:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--faint);
+}
+
+.plan-pane-header .plan-stats {
+  gap: 14px;
+  min-width: 0;
 }
 
 .view-toggle {
@@ -805,10 +803,15 @@ a:hover {
 }
 
 .plan-pane-body {
+  display: flex;
   flex: 1;
   min-height: 0;
+  flex-direction: column;
   padding: 18px 20px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: #c5d2dc transparent;
+  scrollbar-width: thin;
 }
 
 .plan-empty {
@@ -960,16 +963,12 @@ a:hover {
 
 .plan-pane-footer {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
   padding: 12px 20px 16px;
   border-top: 1px solid var(--line);
   background: var(--surface-soft);
-}
-
-.plan-footer-main {
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .plan-stats {
@@ -1001,7 +1000,6 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-left: auto;
   padding: 5px 9px;
   border-radius: 7px;
   color: var(--danger);
@@ -1013,8 +1011,16 @@ a:hover {
 }
 
 .plan-footer-actions {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  flex: none;
+  min-width: 0;
+}
+
+.plan-footer-actions .project-links {
+  margin-left: auto;
 }
 
 .text-button {
@@ -1087,7 +1093,9 @@ a:hover {
 
 .calendar-shell {
   position: relative;
+  flex: 1 0 auto;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1330,18 +1338,18 @@ a:hover {
 
 .connection-panel {
   display: grid;
-  width: min(960px, 100%);
-  min-height: 590px;
+  width: min(920px, 100%);
+  min-height: 0;
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 15%);
   border-radius: 19px;
   background: #fff;
   box-shadow: 0 35px 100px rgb(0 0 0 / 35%);
-  grid-template-columns: minmax(430px, 1.06fr) minmax(350px, 0.94fr);
+  grid-template-columns: minmax(400px, 1.06fr) minmax(320px, 0.94fr);
 }
 
 .connection-copy {
-  padding: 40px 46px;
+  padding: 28px 34px 24px;
 }
 
 .eyebrow {
@@ -1367,26 +1375,26 @@ a:hover {
 
 .connection-copy h1 {
   max-width: 410px;
-  margin: 16px 0 9px;
+  margin: 10px 0 6px;
   color: var(--navy);
-  font-size: clamp(27px, 3vw, 38px);
+  font-size: clamp(24px, 2.6vw, 32px);
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1.05;
 }
 
 .connection-lede {
-  max-width: 460px;
+  max-width: 440px;
   margin: 0;
   color: var(--muted);
   font-size: 12px;
-  line-height: 1.65;
+  line-height: 1.5;
 }
 
 .connection-why {
-  max-width: 460px;
-  margin-top: 12px;
-  padding: 10px 11px;
+  max-width: 440px;
+  margin-top: 8px;
+  padding: 8px 10px;
   border: 1px solid #d7e4ee;
   border-radius: 9px;
   background: #f5f9fc;
@@ -1400,16 +1408,16 @@ a:hover {
 }
 
 .connection-why p {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   color: var(--muted);
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .session-notice {
   display: flex;
-  margin-top: 13px;
-  padding: 9px 10px;
+  margin-top: 10px;
+  padding: 8px 10px;
   align-items: center;
   border: 1px solid #efd387;
   border-radius: 8px;
@@ -1421,46 +1429,38 @@ a:hover {
 
 .connection-steps {
   display: flex;
-  margin: 23px 0 17px;
+  margin: 14px 0 0;
   padding: 0;
   list-style: none;
   flex-direction: column;
-  gap: 13px;
+  gap: 7px;
 }
 
 .connection-steps li {
   display: grid;
-  grid-template-columns: 27px 1fr;
-  gap: 10px;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 8px;
 }
 
 .connection-steps li > span {
   display: grid;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   place-items: center;
   border: 1px solid #bfd5e3;
-  border-radius: 8px;
+  border-radius: 7px;
   color: var(--cobalt);
   background: #f2f8fb;
   font-size: 10px;
   font-weight: 740;
 }
 
-.connection-steps li > div {
-  padding-top: 1px;
-}
-
-.connection-steps strong {
-  color: var(--ink);
-  font-size: 12px;
-}
-
 .connection-steps p {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .connection-steps a {
@@ -1508,7 +1508,7 @@ a:hover {
 }
 
 .connection-form {
-  margin-top: 17px;
+  margin-top: 12px;
 }
 
 .connection-form > label {
@@ -1586,15 +1586,117 @@ a:hover {
   gap: 5px;
 }
 
+.form-error-block {
+  margin-top: 7px;
+}
+
+.form-error-block .form-error {
+  margin-top: 0;
+}
+
+.form-error-hint {
+  margin: 6px 2px 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .connect-button {
   width: 100%;
   margin-top: 11px;
 }
 
+.connection-skip {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e6ebf0;
+}
+
+.connection-skip-button {
+  color: var(--cobalt);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.connection-skip-note {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.search-pane.is-disabled .search-box {
+  opacity: 0.72;
+}
+
+.search-pane.is-disabled .search-box input:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  background: #f4f6f8;
+}
+
+.search-filter-toggle.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.search-disabled-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 28px 22px;
+}
+
+.search-disabled-state .empty-icon {
+  margin-bottom: 4px;
+}
+
+.search-disabled-state strong {
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 760;
+}
+
+.search-disabled-state > p {
+  max-width: 320px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.search-disabled-list {
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.search-disabled-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.search-disabled-list li > span {
+  color: #b0b7c1;
+  font-size: 11px;
+}
+
+.search-disabled-state .primary-button {
+  margin-top: 4px;
+}
+
 .devtools-illustration {
   position: relative;
   min-width: 0;
-  padding: 72px 31px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 28px;
   overflow: hidden;
   color: #d4e2ec;
   background:
@@ -1870,7 +1972,17 @@ a:hover {
 }
 
 @media (max-width: 980px) {
+  .planner-app {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
   .planner-workspace {
+    flex: none;
+    min-height: calc(100vh - 64px);
+    overflow: visible;
     grid-template-columns: 1fr;
   }
 
@@ -1878,6 +1990,18 @@ a:hover {
     border-right: 0;
     border-bottom: 1px solid var(--line);
     max-height: 52vh;
+  }
+
+  .plan-pane {
+    overflow: visible;
+  }
+
+  .plan-pane-body {
+    overflow: visible;
+  }
+
+  .calendar-shell {
+    flex: none;
   }
 }
 
@@ -1906,8 +2030,8 @@ a:hover {
   }
 
   .devtools-illustration {
-    min-height: 420px;
-    padding: 54px clamp(22px, 8vw, 70px);
+    min-height: 0;
+    padding: 28px clamp(22px, 8vw, 48px);
   }
 
   .plan-list-head,
@@ -1933,6 +2057,11 @@ a:hover {
 
   .plan-pane-header {
     flex-wrap: wrap;
+  }
+
+  .plan-pane-header .plan-stats {
+    order: 3;
+    width: 100%;
   }
 
   .view-toggle {
@@ -1986,20 +2115,21 @@ a:hover {
     display: none;
   }
 
-  .plan-footer-main {
-    flex-wrap: wrap;
+  .plan-footer-actions {
+    width: 100%;
   }
 
-  .plan-footer-actions {
-    flex-wrap: wrap;
+  .plan-footer-actions .project-links {
+    margin-left: 0;
+    width: 100%;
   }
 
   .connection-copy {
-    padding: 31px 23px;
+    padding: 22px 18px;
   }
 
   .connection-copy h1 {
-    font-size: 29px;
+    font-size: 26px;
   }
 
   .devtools-illustration {

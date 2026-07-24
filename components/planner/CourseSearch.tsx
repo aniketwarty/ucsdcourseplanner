@@ -15,8 +15,10 @@ import { Icon } from "./Icons";
 type CourseSearchProps = {
   term: AcademicTerm;
   planned: PlannedPackage[];
+  disabled?: boolean;
   onAdd: (course: Course, section: SectionGroup) => void;
   onRemove: (id: string) => void;
+  onConnect?: () => void;
   onSessionExpired: () => void;
 };
 
@@ -53,8 +55,10 @@ function seatLabel(section: SectionGroup): string {
 export function CourseSearch({
   term,
   planned,
+  disabled = false,
   onAdd,
   onRemove,
+  onConnect,
   onSessionExpired,
 }: CourseSearchProps) {
   const [query, setQuery] = useState("");
@@ -80,9 +84,17 @@ export function CourseSearch({
     setExpandedKey(null);
     setSearched(false);
     setSearchError("");
-  }, [term.id]);
+    if (disabled) setQuery("");
+  }, [term.id, disabled]);
 
   useEffect(() => {
+    if (disabled) {
+      setCourses([]);
+      setSearched(false);
+      setSearching(false);
+      setSearchError("");
+      return;
+    }
     const trimmed = query.trim();
     if (trimmed.length < 2) {
       setCourses([]);
@@ -134,10 +146,10 @@ export function CourseSearch({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query, term.academicYear, term.academicPeriod, onSessionExpired]);
+  }, [query, term.academicYear, term.academicPeriod, onSessionExpired, disabled]);
 
   useEffect(() => {
-    if (courses.length === 0) return;
+    if (disabled || courses.length === 0) return;
     const controller = new AbortController();
     const missing = courses.filter(
       (course) => !loadedModules.current.has(course.moduleId),
@@ -198,7 +210,7 @@ export function CourseSearch({
     );
 
     return () => controller.abort();
-  }, [courses, term.academicYear, term.academicPeriod, onSessionExpired]);
+  }, [courses, term.academicYear, term.academicPeriod, onSessionExpired, disabled]);
 
   function retrySections(course: Course) {
     loadedModules.current.delete(course.moduleId);
@@ -212,20 +224,28 @@ export function CourseSearch({
   }
 
   return (
-    <aside className="search-pane" aria-label="Find courses">
+    <aside
+      className={`search-pane ${disabled ? "is-disabled" : ""}`}
+      aria-label="Find courses"
+    >
       <div className="search-pane-top">
         <div className="search-box">
           <Icon name="search" size={18} />
           <input
             id="course-search"
             autoComplete="off"
+            disabled={disabled}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={`Search ${term.shortLabel} classes…`}
+            placeholder={
+              disabled
+                ? "Connect to TSS to search courses"
+                : `Search ${term.shortLabel} classes…`
+            }
             type="search"
             value={query}
           />
           {searching ? <span className="input-spinner" aria-label="Searching" /> : null}
-          {query ? (
+          {query && !disabled ? (
             <button
               aria-label="Clear search"
               className="search-clear"
@@ -237,9 +257,20 @@ export function CourseSearch({
           ) : null}
         </div>
 
-        <label className="search-filter-toggle">
+        {!disabled ? (
+          <p className="search-examples">
+            Try{" "}
+            <span className="search-example-code">“CSE-100”</span>,{" "}
+            <span className="search-example-code">“SYN-002”</span>,{" "}
+            <span className="search-example-code">“calculus”</span>, or{" "}
+            <span className="search-example-code">“MATH-020C”</span>.
+          </p>
+        ) : null}
+
+        <label className={`search-filter-toggle ${disabled ? "is-disabled" : ""}`}>
           <input
             checked={hideConflicts}
+            disabled={disabled}
             onChange={(event) => setHideConflicts(event.target.checked)}
             type="checkbox"
           />
@@ -248,9 +279,42 @@ export function CourseSearch({
       </div>
 
       <div className="search-results" aria-live="polite">
-        {searching && courses.length === 0 ? <SearchSkeleton /> : null}
+        {disabled ? (
+          <div className="search-disabled-state">
+            <div className="empty-icon">
+              <Icon name="lock" />
+            </div>
+            <strong>Course search disabled</strong>
+            <p>
+              You’re viewing a saved plan without a TSS session. Connect to
+              search live sections, check seats, and refresh course data.
+            </p>
+            <ul className="search-disabled-list">
+              <li>
+                <span aria-hidden="true">✕</span>
+                Live course search
+              </li>
+              <li>
+                <span aria-hidden="true">✕</span>
+                New section times and seats
+              </li>
+              <li>
+                <span aria-hidden="true">✕</span>
+                TSS plan refresh
+              </li>
+            </ul>
+            {onConnect ? (
+              <button className="primary-button" onClick={onConnect} type="button">
+                <Icon name="lock" size={16} />
+                Connect to TSS
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
-        {searchError ? (
+        {!disabled && searching && courses.length === 0 ? <SearchSkeleton /> : null}
+
+        {!disabled && searchError ? (
           <div className="inline-state error-state" role="alert">
             <Icon name="alert" />
             <div>
@@ -260,7 +324,7 @@ export function CourseSearch({
           </div>
         ) : null}
 
-        {!searching && searched && !searchError && courses.length === 0 ? (
+        {!disabled && !searching && searched && !searchError && courses.length === 0 ? (
           <div className="inline-state">
             <div className="empty-icon">
               <Icon name="search" />
@@ -270,13 +334,8 @@ export function CourseSearch({
           </div>
         ) : null}
 
-        {!searched && query.trim().length < 2 ? (
+        {!disabled && !searched && query.trim().length < 2 ? (
           <div className="search-welcome">
-            <div className="catalog-mark">
-              <span>C</span>
-              <span>SE</span>
-              <span>DSC</span>
-            </div>
             <strong>Start with a course</strong>
             <p>
               Enter at least two characters to search live TSS catalog results for{" "}
@@ -285,7 +344,8 @@ export function CourseSearch({
           </div>
         ) : null}
 
-        {courses.map((course) => {
+        {!disabled
+          ? courses.map((course) => {
           const sections = sectionsByCourse[course.moduleId];
           const loading = sectionLoading[course.moduleId];
           const error = sectionErrors[course.moduleId];
@@ -493,7 +553,8 @@ export function CourseSearch({
               ) : null}
             </article>
           );
-        })}
+        })
+          : null}
       </div>
     </aside>
   );
