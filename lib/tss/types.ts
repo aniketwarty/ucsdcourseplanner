@@ -45,6 +45,8 @@ export interface SectionGroup {
   id: string;
   label: string;
   courseAbbr: string;
+  /** TSS Event Package object id used in Fiori enroll deep-links. */
+  eventPkgObjid: string;
   meetings: Meeting[];
   finalExam: FinalExam | null;
   seatsAvailable: number;

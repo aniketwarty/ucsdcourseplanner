@@ -1,0 +1,53 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F3B6B"/>
+      <stop offset="100%" stop-color="#0F2144"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD54A"/>
+      <stop offset="100%" stop-color="#E8AC00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+
+  <!-- subtle inner glow ring -->
+  <rect x="16" y="16" width="480" height="480" rx="84" fill="none" stroke="#33508A" stroke-width="2" opacity="0.5"/>
+
+  <!-- Open book / planner base -->
+  <g>
+    <path d="M116 210 C116 198 126 190 138 190 L246 190 C252 190 256 194 256 200 L256 350 C256 356 252 360 246 360 L138 360 C126 360 116 352 116 340 Z"
+          fill="#FFFFFF" opacity="0.95"/>
+    <path d="M396 210 C396 198 386 190 374 190 L266 190 C260 190 256 194 256 200 L256 350 C256 356 260 360 266 360 L374 360 C386 360 396 352 396 340 Z"
+          fill="#FFFFFF" opacity="0.95"/>
+    <line x1="256" y1="200" x2="256" y2="358" stroke="#0F2144" stroke-width="4" opacity="0.4"/>
+
+    <!-- left page lines (course list) -->
+    <line x1="136" y1="222" x2="230" y2="222" stroke="#1F3B6B" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+    <line x1="136" y1="248" x2="230" y2="248" stroke="#1F3B6B" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+    <line x1="136" y1="274" x2="212" y2="274" stroke="#1F3B6B" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- right page: checklist for planning -->
+    <rect x="278" y="216" width="18" height="18" rx="4" fill="none" stroke="#1F3B6B" stroke-width="4" opacity="0.6"/>
+    <path d="M281 225 L286 230 L294 220" stroke="#E8AC00" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="306" y1="225" x2="376" y2="225" stroke="#1F3B6B" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+
+    <rect x="278" y="248" width="18" height="18" rx="4" fill="none" stroke="#1F3B6B" stroke-width="4" opacity="0.6"/>
+    <path d="M281 257 L286 262 L294 252" stroke="#E8AC00" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="306" y1="257" x2="376" y2="257" stroke="#1F3B6B" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+
+    <rect x="278" y="280" width="18" height="18" rx="4" fill="none" stroke="#1F3B6B" stroke-width="4" opacity="0.4"/>
+    <line x1="306" y1="289" x2="360" y2="289" stroke="#1F3B6B" stroke-width="6" stroke-linecap="round" opacity="0.35"/>
+  </g>
+
+  <!-- Graduation cap on top, centered -->
+  <g transform="translate(256 128)">
+    <path d="M0 -34 L118 8 L0 50 L-118 8 Z" fill="url(#gold)"/>
+    <path d="M-70 22 L-70 62 C-70 74 -30 82 0 82 C30 82 70 74 70 62 L70 22 L0 46 Z" fill="#0F2144"/>
+    <circle cx="106" cy="14" r="7" fill="url(#gold)"/>
+    <line x1="106" y1="14" x2="106" y2="66" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="106" cy="70" r="8" fill="url(#gold)"/>
+  </g>
+</svg>

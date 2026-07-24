@@ -41,6 +41,8 @@ export type SectionGroup = {
   id: string;
   label: string;
   courseAbbr: string;
+  /** TSS Event Package object id used in Fiori enroll deep-links. */
+  eventPkgObjid: string;
   capacity: number;
   seatsAvailable: number;
   waitlistCount: number;
@@ -252,6 +254,7 @@ function sanitizeSection(value: unknown): SectionGroup | null {
     id: value.id,
     label: value.label,
     courseAbbr: value.courseAbbr,
+    eventPkgObjid: isString(value.eventPkgObjid) ? value.eventPkgObjid : "",
     capacity: value.capacity,
     seatsAvailable: value.seatsAvailable,
     waitlistCount: value.waitlistCount,
@@ -285,6 +288,7 @@ export function normalizeSection(section: SectionGroup): SectionGroup {
     id: section.id,
     label: section.label,
     courseAbbr: section.courseAbbr,
+    eventPkgObjid: section.eventPkgObjid ?? "",
     capacity: section.capacity,
     seatsAvailable: section.seatsAvailable,
     waitlistCount: section.waitlistCount,
@@ -321,9 +325,26 @@ export function sectionsEqual(a: SectionGroup, b: SectionGroup): boolean {
   return JSON.stringify(normalizeSection(a)) === JSON.stringify(normalizeSection(b));
 }
 
+/** Compare schedule/identity fields, ignoring seat and waitlist churn. */
+export function sectionDetailsEqual(a: SectionGroup, b: SectionGroup): boolean {
+  const left = normalizeSection(a);
+  const right = normalizeSection(b);
+  return (
+    left.id === right.id &&
+    left.label === right.label &&
+    left.courseAbbr === right.courseAbbr &&
+    left.eventPkgObjid === right.eventPkgObjid &&
+    JSON.stringify(left.meetings) === JSON.stringify(right.meetings) &&
+    JSON.stringify(left.finalExam ?? null) ===
+      JSON.stringify(right.finalExam ?? null)
+  );
+}
+
 export type PlanRefreshResult = {
   packages: PlannedPackage[];
   updatedIds: string[];
+  /** Subset of updatedIds where schedule/identity fields changed (not just seats). */
+  changedIds: string[];
   missingIds: string[];
 };
 
@@ -336,6 +357,7 @@ export function refreshPlannedPackages(
   sectionsByModuleId: Record<string, SectionGroup[]>,
 ): PlanRefreshResult {
   const updatedIds: string[] = [];
+  const changedIds: string[] = [];
   const missingIds: string[] = [];
   const next = packages.map((item) => {
     const sections = sectionsByModuleId[item.course.moduleId];
@@ -348,9 +370,12 @@ export function refreshPlannedPackages(
     const normalized = normalizeSection(fresh);
     if (sectionsEqual(item.section, normalized)) return item;
     updatedIds.push(item.id);
+    if (!sectionDetailsEqual(item.section, normalized)) {
+      changedIds.push(item.id);
+    }
     return { ...item, section: normalized };
   });
-  return { packages: next, updatedIds, missingIds };
+  return { packages: next, updatedIds, changedIds, missingIds };
 }
 
 export function serializePlanner(packages: PlannedPackage[]): string {

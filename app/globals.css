@@ -1437,70 +1437,59 @@ a:hover {
 
 .planner-app-loading {
   min-height: 100dvh;
-  background: var(--canvas);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 38%, rgb(0 98 155 / 9%), transparent),
+    radial-gradient(ellipse 50% 35% at 70% 80%, rgb(255 205 0 / 8%), transparent),
+    linear-gradient(180deg, #f5f7fa 0%, var(--canvas) 100%);
 }
 
-.session-check-overlay {
-  position: relative;
-  z-index: 1;
+.session-check {
   display: grid;
   flex: 1;
   min-height: 0;
-  min-width: 320px;
-  padding: 24px;
   place-content: center;
   justify-items: center;
-  background:
-    radial-gradient(circle at 50% 28%, rgb(0 98 155 / 10%), transparent 26rem),
-    radial-gradient(circle at 82% 88%, rgb(255 205 0 / 12%), transparent 18rem),
-    var(--canvas);
-}
-
-.session-check-card {
-  display: grid;
-  width: min(360px, 100%);
-  justify-items: center;
-  gap: 8px;
-  padding: 28px 30px 26px;
+  gap: 22px;
+  padding: 32px 24px;
   text-align: center;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: var(--shadow-md);
+  animation: session-check-in 420ms ease-out both;
 }
 
-.session-check-card::before {
-  content: "";
-  display: block;
-  width: 40px;
-  height: 3px;
-  margin-bottom: 6px;
-  border-radius: 999px;
-  background: var(--gold);
+.session-check-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-check-brand .brand-eyebrow {
+  color: var(--cobalt);
+  letter-spacing: 0.18em;
+}
+
+.session-check-brand strong {
+  color: var(--navy);
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .session-check-spinner {
-  width: 28px;
-  height: 28px;
-  margin: 4px 0 8px;
-  border-width: 2.5px;
-  color: var(--cobalt);
-}
-
-.session-check-title {
-  margin: 0;
-  color: var(--navy);
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgb(24 43 73 / 12%);
+  border-top-color: var(--cobalt);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
 }
 
 .session-check-copy {
   margin: 0;
-  max-width: 28ch;
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.45;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .connection-backdrop {
@@ -1973,6 +1962,17 @@ a:hover {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes session-check-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

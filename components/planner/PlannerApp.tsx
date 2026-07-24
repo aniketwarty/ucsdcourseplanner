@@ -191,23 +191,25 @@ export function PlannerApp() {
         );
         syncedSessionRef.current = true;
 
-        if (result.updatedIds.length > 0 || result.missingIds.length > 0) {
+        if (result.updatedIds.length > 0) {
           setPlanned(result.packages);
-          const parts: string[] = [];
-          if (result.updatedIds.length > 0) {
-            parts.push(
-              `Updated ${result.updatedIds.length} saved section${
-                result.updatedIds.length === 1 ? "" : "s"
-              } from TSS`,
-            );
-          }
-          if (result.missingIds.length > 0) {
-            parts.push(
-              `${result.missingIds.length} section${
-                result.missingIds.length === 1 ? "" : "s"
-              } no longer listed in TSS`,
-            );
-          }
+        }
+        const parts: string[] = [];
+        if (result.changedIds.length > 0) {
+          parts.push(
+            `Updated ${result.changedIds.length} saved section${
+              result.changedIds.length === 1 ? "" : "s"
+            } from TSS`,
+          );
+        }
+        if (result.missingIds.length > 0) {
+          parts.push(
+            `${result.missingIds.length} section${
+              result.missingIds.length === 1 ? "" : "s"
+            } no longer listed in TSS`,
+          );
+        }
+        if (parts.length > 0) {
           setAppMessage(`${parts.join(". ")}.`);
         }
       } catch (error) {
@@ -291,20 +293,13 @@ export function PlannerApp() {
   if (sessionPending) {
     return (
       <div className="planner-app planner-app-loading">
-        <header className="topbar">
-          <div className="brand">
-            <div>
-              <span className="brand-eyebrow">UC San Diego</span>
-              <strong>Schedule Planner</strong>
-            </div>
+        <div className="session-check" role="status" aria-live="polite">
+          <div className="session-check-brand">
+            <span className="brand-eyebrow">UC San Diego</span>
+            <strong>Schedule Planner</strong>
           </div>
-        </header>
-        <div className="session-check-overlay" role="status" aria-live="polite">
-          <div className="session-check-card">
-            <span className="button-spinner session-check-spinner" />
-            <p className="session-check-title">Loading your planner</p>
-            <p className="session-check-copy">Checking your secure TSS connection…</p>
-          </div>
+          <span className="session-check-spinner" aria-hidden="true" />
+          <p className="session-check-copy">Checking your TSS connection</p>
         </div>
       </div>
     );

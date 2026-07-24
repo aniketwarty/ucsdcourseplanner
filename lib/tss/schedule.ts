@@ -43,6 +43,12 @@ export function mapSectionGroups(data: unknown): SectionGroup[] {
         courseAbbr:
           text(record, "CourseAbbr", "ModuleAbbr", "ModuleCode") ||
           courseAbbrFromPackage(id),
+        eventPkgObjid: text(
+          record,
+          "EventPkgObjid",
+          "EventPkgObjId",
+          "EventPkgObjectId",
+        ),
         meetings: [],
         finalExam: null,
         seatsAvailable: numeric(
@@ -74,6 +80,14 @@ export function mapSectionGroups(data: unknown): SectionGroup[] {
       groups.set(id, group);
       seenMeetings.set(id, new Set());
     } else {
+      if (!group.eventPkgObjid) {
+        group.eventPkgObjid = text(
+          record,
+          "EventPkgObjid",
+          "EventPkgObjId",
+          "EventPkgObjectId",
+        );
+      }
       group.seatsAvailable = mergeNumber(
         group.seatsAvailable,
         numeric(
