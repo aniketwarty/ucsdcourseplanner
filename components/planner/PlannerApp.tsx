@@ -82,7 +82,13 @@ export function PlannerApp() {
           credentials: "same-origin",
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error();
+        if (!response.ok) {
+          setAuthNotice(
+            `We couldn’t verify a TSS session. Connect to continue. (HTTP ${response.status})`,
+          );
+          setAuth(readSkipPreference() ? "offline" : "disconnected");
+          return;
+        }
         const body = (await response.json()) as { connected?: boolean };
         if (body.connected === true) {
           writeSkipPreference(false);
@@ -280,6 +286,29 @@ export function PlannerApp() {
   }
 
   const offline = auth === "offline";
+  const sessionPending = auth === "checking";
+
+  if (sessionPending) {
+    return (
+      <div className="planner-app planner-app-loading">
+        <header className="topbar">
+          <div className="brand">
+            <div>
+              <span className="brand-eyebrow">UC San Diego</span>
+              <strong>Schedule Planner</strong>
+            </div>
+          </div>
+        </header>
+        <div className="session-check-overlay" role="status" aria-live="polite">
+          <div className="session-check-card">
+            <span className="button-spinner session-check-spinner" />
+            <p className="session-check-title">Loading your planner</p>
+            <p className="session-check-copy">Checking your secure TSS connection…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="planner-app">
@@ -299,15 +328,13 @@ export function PlannerApp() {
             role="status"
           >
             <span />
-            {auth === "checking"
-              ? "Checking session"
-              : auth === "connected"
-                ? syncing
-                  ? "Syncing plan…"
-                  : "TSS connected"
-                : offline
-                  ? "Viewing offline"
-                  : "TSS disconnected"}
+            {auth === "connected"
+              ? syncing
+                ? "Syncing plan…"
+                : "TSS connected"
+              : offline
+                ? "Viewing offline"
+                : "TSS disconnected"}
           </div>
           {auth === "connected" ? (
             <button
@@ -359,13 +386,6 @@ export function PlannerApp() {
           view={planView}
         />
       </main>
-
-      {auth === "checking" ? (
-        <div className="session-check-overlay" role="status">
-          <span className="button-spinner" />
-          Checking your secure TSS connection…
-        </div>
-      ) : null}
 
       <ConnectionPanel
         notice={authNotice}

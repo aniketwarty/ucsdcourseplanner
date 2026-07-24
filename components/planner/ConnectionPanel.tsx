@@ -17,13 +17,15 @@ const SKIP_LIMITATIONS = [
 ] as const;
 
 async function errorMessage(response: Response): Promise<string> {
+  const statusLabel = `HTTP ${response.status}`;
   try {
     const body = (await response.json()) as {
       error?: { code?: string; message?: string };
     };
-    return body.error?.message || "The cookie could not be verified.";
+    const message = body.error?.message || "The cookie could not be verified.";
+    return `${message} (${statusLabel})`;
   } catch {
-    return "The cookie could not be verified. Please try again.";
+    return `The cookie could not be verified. Please try again. (${statusLabel})`;
   }
 }
 
