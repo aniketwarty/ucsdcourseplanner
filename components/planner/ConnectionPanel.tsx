@@ -41,8 +41,20 @@ export function ConnectionPanel({
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  function clearSecret() {
+    setCookie("");
+    setShowCookie(false);
+    setError("");
+  }
+
   useEffect(() => {
-    if (open) window.setTimeout(() => inputRef.current?.focus(), 100);
+    if (open) {
+      window.setTimeout(() => inputRef.current?.focus(), 100);
+      return;
+    }
+    // Cookie is only needed for the one-time POST body; wipe it when dismissed.
+    clearSecret();
+    setSubmitting(false);
   }, [open]);
 
   if (!open) return null;
@@ -67,8 +79,7 @@ export function ConnectionPanel({
         setError(await errorMessage(response));
         return;
       }
-      setCookie("");
-      setShowCookie(false);
+      clearSecret();
       onConnected();
     } catch {
       setError("Could not reach the server. Check your connection and try again.");
@@ -188,7 +199,10 @@ export function ConnectionPanel({
             <button
               className="text-button connection-skip-button"
               disabled={submitting}
-              onClick={onSkip}
+              onClick={() => {
+                clearSecret();
+                onSkip();
+              }}
               type="button"
             >
               Skip for now — view my plan

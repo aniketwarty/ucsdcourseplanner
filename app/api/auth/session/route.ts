@@ -6,6 +6,7 @@ import {
   errorResponse,
   setSessionCookie,
 } from "@/lib/api/responses";
+import { assertSameOrigin } from "@/lib/api/origin";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSessionStore } from "@/lib/session/store";
 import { normalizeTssCookie, MAX_COOKIE_HEADER_LENGTH } from "@/lib/tss/auth";
@@ -26,6 +27,7 @@ const authBodySchema = z
 export async function POST(request: NextRequest) {
   let store: ReturnType<typeof createSessionStore> | null = null;
   try {
+    assertSameOrigin(request);
     const existingSessionId = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     await enforceRateLimit(request, "auth", existingSessionId);
 
@@ -83,6 +85,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    assertSameOrigin(request);
     const sessionId = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     await enforceRateLimit(request, "auth", sessionId);
     if (sessionId) await createSessionStore().delete(sessionId);
