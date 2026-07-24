@@ -5,6 +5,7 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import type { CalendarMode, PlannedPackage } from "@/lib/planner";
 import { toCalendarEvents } from "@/lib/planner";
+import { buildPlannedPackageEnrollUrl } from "@/lib/tss/enroll";
 import type { AcademicTerm } from "@/lib/tss/terms";
 import { Icon } from "./Icons";
 
@@ -26,6 +27,9 @@ export function ScheduleCalendar({
     end: term.finalsEnd,
   });
   const isFinals = mode === "finals";
+  const enrollByPackageId = new Map(
+    planned.map((item) => [item.id, buildPlannedPackageEnrollUrl(item)]),
+  );
 
   return (
     <div className={`calendar-shell ${isFinals ? "is-finals" : ""}`}>
@@ -43,7 +47,9 @@ export function ScheduleCalendar({
             dayHeaderFormat={{ weekday: "short" }}
             dayHeaderClassNames="planner-day-header"
             editable={false}
-            eventContent={(info) => renderEvent(info, onRemove)}
+            eventContent={(info) =>
+              renderEvent(info, enrollByPackageId, onRemove)
+            }
             eventDidMount={(info) => {
               const props = info.event.extendedProps;
               const conflictText = props.conflict ? ", schedule conflict" : "";
@@ -84,14 +90,31 @@ export function ScheduleCalendar({
 
 function renderEvent(
   info: EventContentArg,
+  enrollByPackageId: Map<string, string | null>,
   onRemove?: (id: string) => void,
 ) {
   const props = info.event.extendedProps;
+  const enrollUrl = enrollByPackageId.get(props.packageId) ?? null;
   return (
     <div className="calendar-event-content">
+      {enrollUrl ? (
+        <a
+          aria-label={`Enroll in ${props.courseAbbr} on TSS`}
+          className="calendar-event-enroll"
+          href={enrollUrl}
+          onClick={(event) => event.stopPropagation()}
+          rel="noreferrer"
+          target="_blank"
+          title="Open enrollment on TSS"
+        >
+          <Icon name="external" size={11} />
+        </a>
+      ) : null}
       <strong>{props.courseAbbr}</strong>
       <span>{props.meetingType}</span>
-      <small>{props.location || "TBA"}</small>
+      <small className="calendar-event-location">
+        {props.location || "TBA"}
+      </small>
       {props.conflict ? <Icon name="alert" size={12} /> : null}
       {onRemove ? (
         <button

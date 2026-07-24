@@ -535,30 +535,77 @@ a:hover {
 
 .section-row-button {
   display: grid;
-  grid-template-columns: 18px minmax(96px, 1.1fr) minmax(0, 1.5fr) auto;
-  gap: 10px;
+  grid-template-columns: 28px minmax(0, 1.15fr) minmax(0, 1.2fr) minmax(76px, 0.9fr);
+  gap: 12px;
   width: 100%;
   min-width: 0;
   flex: 1;
   align-items: center;
-  padding: 12px 4px 12px 12px;
+  padding: 12px 4px 12px 10px;
   border: 0;
   text-align: left;
   background: transparent;
+  cursor: pointer;
+}
+
+.section-row-button:hover:not(.is-header) {
+  background: rgb(24 43 73 / 3%);
 }
 
 .section-row.is-expanded {
   background: var(--surface-soft);
 }
 
+.section-row.is-expanded .section-row-button:hover:not(.is-header) {
+  background: transparent;
+}
+
 .section-expand-icon {
-  color: var(--faint);
-  font-size: 11px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--navy);
+  background: var(--surface-soft);
   line-height: 1;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.section-expand-icon svg {
+  display: block;
+  transition: transform 0.15s ease;
+}
+
+.section-table-head .section-expand-icon {
+  border-color: transparent;
+  background: transparent;
+}
+
+.section-row-button:hover:not(.is-header) .section-expand-icon {
+  color: var(--navy-deep);
+  border-color: #c5ccd6;
+  background: #eef2f7;
+}
+
+.section-row-button:focus-visible .section-expand-icon {
+  color: var(--navy-deep);
+  border-color: var(--cobalt);
+  background: #e8f1f7;
 }
 
 .section-row.is-expanded .section-expand-icon {
   color: var(--navy);
+  border-color: #e0b800;
+  background: #fff4c2;
+}
+
+.section-row.is-expanded .section-expand-icon svg {
+  transform: rotate(90deg);
 }
 
 .section-prof {
@@ -613,15 +660,32 @@ a:hover {
 
 .seat-chip,
 .seat-chip-label {
+  justify-self: center;
   text-align: center;
   white-space: nowrap;
 }
 
+.seat-chip-label {
+  font-size: 10px;
+  color: var(--faint);
+}
+
 .seat-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
   border-radius: 5px;
   padding: 3px 7px;
   font-size: 10px;
   font-weight: 600;
+  line-height: 1.2;
+}
+
+.seat-chip small {
+  font-size: 9px;
+  font-weight: 550;
+  opacity: 0.85;
 }
 
 .seat-chip.open {
@@ -1222,34 +1286,102 @@ a:hover {
   overflow: hidden;
   flex-direction: column;
   line-height: 1.2;
+  container-type: size;
+}
+
+.calendar-event-content:has(.calendar-event-enroll),
+.calendar-event-content:has(.calendar-event-remove) {
+  padding-right: 26px;
+}
+
+.calendar-event-content:has(.calendar-event-enroll):has(.calendar-event-remove) {
+  padding-right: 42px;
 }
 
 .calendar-event-content strong {
+  flex-shrink: 0;
   font-size: 12px;
   font-weight: 800;
 }
 
-.calendar-event-content span,
-.calendar-event-content small {
+.calendar-event-content span {
+  flex-shrink: 0;
   overflow: hidden;
+  color: var(--muted);
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.calendar-event-content span {
-  color: var(--muted);
+.calendar-event-location {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
 }
 
-.calendar-event-content small {
-  margin-top: 2px;
-  color: var(--ink-soft);
+@container (min-height: 52px) {
+  .calendar-event-location {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+@container (min-height: 70px) {
+  .calendar-event-location {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+
+@container (min-height: 88px) {
+  .calendar-event-location {
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
 }
 
 .calendar-event-content > svg {
   position: absolute;
   right: 4px;
   bottom: 3px;
+}
+
+.calendar-event-enroll {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: none;
+  border-radius: 5px;
+  color: var(--cobalt);
+  background: rgb(255 255 255 / 65%);
+  line-height: 1;
+  text-decoration: none;
+  z-index: 2;
+}
+
+.calendar-event-content:has(.calendar-event-remove) .calendar-event-enroll {
+  right: 22px;
+}
+
+.calendar-event-enroll:hover {
+  color: var(--cobalt);
+  background: #fff;
 }
 
 .calendar-event-remove {
@@ -1953,7 +2085,7 @@ a:hover {
   }
 
   .section-row-button {
-    grid-template-columns: 18px minmax(0, 1fr) auto;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
   }
 
   .section-times,

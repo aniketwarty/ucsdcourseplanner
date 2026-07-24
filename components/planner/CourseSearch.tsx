@@ -52,6 +52,10 @@ function seatLabel(section: SectionGroup): string {
   return `${Math.max(section.seatsAvailable, 0)} / ${section.capacity}`;
 }
 
+function waitlistLabel(section: SectionGroup): string {
+  return `WL ${Math.max(section.waitlistCount, 0)}`;
+}
+
 export function CourseSearch({
   term,
   planned,
@@ -435,7 +439,7 @@ export function CourseSearch({
                         <span className="section-expand-icon" />
                         <span>Instructor</span>
                         <span className="section-times-label">Meeting times</span>
-                        <span className="seat-chip-label">Seats</span>
+                        <span className="seat-chip-label">Seats / WL</span>
                       </div>
                       <span className="section-quick-add-spacer" />
                     </div>
@@ -482,7 +486,7 @@ export function CourseSearch({
                             type="button"
                           >
                             <span className="section-expand-icon" aria-hidden="true">
-                              {expanded ? "▾" : "▸"}
+                              <Icon name="chevron" size={14} />
                             </span>
                             <span className="section-prof">
                               <strong>{sectionInstructor(section)}</strong>
@@ -496,8 +500,12 @@ export function CourseSearch({
                             <span className="section-times">
                               {sectionTimeSummary(section)}
                             </span>
-                            <span className={`seat-chip ${open ? "open" : "full"}`}>
-                              {seatLabel(section)}
+                            <span
+                              className={`seat-chip ${open ? "open" : "full"}`}
+                              title={`${seatLabel(section)} open · ${waitlistLabel(section)}`}
+                            >
+                              <span>{seatLabel(section)}</span>
+                              <small>{waitlistLabel(section)}</small>
                             </span>
                           </button>
                           <button
