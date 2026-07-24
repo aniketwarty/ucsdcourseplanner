@@ -62,6 +62,7 @@ export function CourseSearch({
   onSessionExpired,
 }: CourseSearchProps) {
   const [query, setQuery] = useState("");
+  const [searchNonce, setSearchNonce] = useState(0);
   const [courses, setCourses] = useState<Course[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -74,6 +75,7 @@ export function CourseSearch({
   const [sectionLoading, setSectionLoading] = useState<Record<string, boolean>>({});
   const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({});
   const loadedModules = useRef(new Set<string>());
+  const skipSearchDebounce = useRef(false);
 
   useEffect(() => {
     loadedModules.current.clear();
@@ -103,6 +105,8 @@ export function CourseSearch({
       setSearchError("");
       return;
     }
+    const delay = skipSearchDebounce.current ? 0 : 350;
+    skipSearchDebounce.current = false;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setSearching(true);
@@ -141,12 +145,26 @@ export function CourseSearch({
       } finally {
         if (!controller.signal.aborted) setSearching(false);
       }
-    }, 350);
+    }, delay);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query, term.academicYear, term.academicPeriod, onSessionExpired, disabled]);
+  }, [
+    query,
+    searchNonce,
+    term.academicYear,
+    term.academicPeriod,
+    onSessionExpired,
+    disabled,
+  ]);
+
+  function forceSearch() {
+    if (disabled || query.trim().length < 2) return;
+    setSearchError("");
+    skipSearchDebounce.current = true;
+    setSearchNonce((current) => current + 1);
+  }
 
   useEffect(() => {
     if (disabled || courses.length === 0) return;
@@ -236,6 +254,12 @@ export function CourseSearch({
             autoComplete="off"
             disabled={disabled}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                forceSearch();
+              }
+            }}
             placeholder={
               disabled
                 ? "Connect to TSS to search courses"
