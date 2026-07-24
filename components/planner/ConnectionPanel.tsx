@@ -103,7 +103,8 @@ export function ConnectionPanel({
             <strong>Why do I need to paste a cookie?</strong>
             <p>
               A cookie is a short-lived sign-in pass your browser gets after you
-              log into TSS. This site uses it to look up live course times and
+              log into TSS thats required to access the course search API. 
+              This site uses it to look up live course times and
               seats without asking for your UCSD password.
             </p>
           </div>
