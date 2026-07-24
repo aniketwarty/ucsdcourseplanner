@@ -117,7 +117,7 @@ export function PlanPane({
             <div className="plan-list">
               <div className="plan-list-head" aria-hidden="true">
                 <span>Course</span>
-                <span>Sec</span>
+                <span>Section</span>
                 <span>Instructor</span>
                 <span>Meets</span>
                 <span>Location</span>
