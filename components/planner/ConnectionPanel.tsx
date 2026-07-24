@@ -89,9 +89,8 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
             <strong>Why do I need to paste a cookie?</strong>
             <p>
               A cookie is a short-lived sign-in pass your browser gets after you
-              log into TSS. This website uses the TSS search API to look up live
-              course times and seats which requires a valid login. The session cookie 
-              is used to authenticate requests to the TSS search API without needing your password.
+              log into TSS. This site uses it to look up live course times and
+              seats without asking for your UCSD password.
             </p>
           </div>
           {notice ? (
@@ -130,7 +129,8 @@ export function ConnectionPanel({ open, notice, onConnected }: ConnectionPanelPr
               <div>
                 <strong>Copy the session value</strong>
                 <p>
-                  Find <code>SAP_SESSIONID_S4P_500</code> and copy its value.
+                  Find <code>SAP_SESSIONID_S4P_500</code> and copy only its
+                  value (not the name).
                 </p>
               </div>
             </li>

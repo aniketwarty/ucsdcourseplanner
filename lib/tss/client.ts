@@ -33,28 +33,36 @@ export interface TssFetch {
   (input: string | URL | Request, init?: RequestInit): Promise<Response>;
 }
 
+const TSS_ORIGIN = "https://tss.ucsd.edu";
+const TSS_FIORI_REFERER = `${TSS_ORIGIN}/fiori`;
+
 export class TssClient {
   constructor(private readonly fetchImpl: TssFetch = fetch) {}
 
   async fetchCsrfToken(cookie: string): Promise<TssCredentials> {
+    // Warm ALB sticky cookies, then fetch CSRF with the merged jar.
+    const warmedCookie = await this.warmSessionCookies(cookie);
     const response = await this.request(
       `${TSS_BASE_URL}/?sap-client=${SAP_CLIENT}`,
       {
         method: "GET",
-        headers: {
+        headers: this.headers({
           Accept: "application/json",
-          Cookie: cookie,
+          Cookie: warmedCookie,
           "X-CSRF-Token": "Fetch",
-        },
+        }),
       },
     );
-    assertUpstreamResponse(response);
+    assertAuthenticatedUpstream(response);
 
     const csrfToken = response.headers.get("x-csrf-token");
-    if (!csrfToken) throw new UpstreamError();
+    if (!csrfToken) throw new SessionExpiredError();
 
     return {
-      cookie: mergeCookieHeaders(cookie, getSetCookieHeaders(response.headers)),
+      cookie: mergeCookieHeaders(
+        warmedCookie,
+        getSetCookieHeaders(response.headers),
+      ),
       csrfToken,
     };
   }
@@ -70,16 +78,16 @@ export class TssClient {
       `${TSS_BASE_URL}/$batch?sap-client=${SAP_CLIENT}`,
       {
         method: "POST",
-        headers: {
+        headers: this.headers({
           Accept: "multipart/mixed",
           "Content-Type": `multipart/mixed; boundary=${boundary}`,
           Cookie: credentials.cookie,
           "X-CSRF-Token": credentials.csrfToken,
-        },
+        }),
         body,
       },
     );
-    assertUpstreamResponse(response);
+    assertAuthenticatedUpstream(response);
 
     const payload = parseBatchJson(
       await response.text(),
@@ -97,21 +105,53 @@ export class TssClient {
       `${TSS_BASE_URL}/${buildSectionsPath(moduleId, term)}`,
       {
         method: "GET",
-        headers: {
+        headers: this.headers({
           Accept: "application/json",
           Cookie: credentials.cookie,
           "X-CSRF-Token": credentials.csrfToken,
-        },
+        }),
       },
     );
-    assertUpstreamResponse(response);
+    assertAuthenticatedUpstream(response);
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("text/html")) {
+      throw new SessionExpiredError();
+    }
 
     try {
       return mapSectionGroups(await response.json());
     } catch (error) {
-      if (error instanceof UpstreamError) throw error;
+      if (error instanceof UpstreamError || error instanceof SessionExpiredError) {
+        throw error;
+      }
       throw new UpstreamError();
     }
+  }
+
+  private async warmSessionCookies(cookie: string): Promise<string> {
+    const response = await this.request(`${TSS_FIORI_REFERER}?sap-client=${SAP_CLIENT}`, {
+      method: "GET",
+      headers: this.headers({
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Cookie: cookie,
+      }),
+    });
+    // Fiori may return login HTML or 401 when the jar is incomplete; still keep
+    // any ALB/SAP cookies the front door sets so the CSRF call can reuse them.
+    if (response.status === 401 || response.status === 403) {
+      throw new SessionExpiredError();
+    }
+    return mergeCookieHeaders(cookie, getSetCookieHeaders(response.headers));
+  }
+
+  private headers(extra: Record<string, string>): Record<string, string> {
+    return {
+      Origin: TSS_ORIGIN,
+      Referer: TSS_FIORI_REFERER,
+      "X-Requested-With": "XMLHttpRequest",
+      ...extra,
+    };
   }
 
   private async request(url: string, init: RequestInit): Promise<Response> {
@@ -202,8 +242,16 @@ export function mapCourses(data: unknown, term: AcademicTerm): Course[] {
     .filter((course): course is Course => course !== null);
 }
 
-function assertUpstreamResponse(response: Response): void {
+function assertAuthenticatedUpstream(response: Response): void {
   if (response.status === 401 || response.status === 403) {
+    throw new SessionExpiredError();
+  }
+  if (response.status >= 300 && response.status < 400) {
+    // SSO bounce / login redirect — treat as an unusable session jar.
+    throw new SessionExpiredError();
+  }
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("text/html")) {
     throw new SessionExpiredError();
   }
   if (!response.ok) throw new UpstreamError();

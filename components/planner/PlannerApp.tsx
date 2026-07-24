@@ -82,7 +82,9 @@ export function PlannerApp() {
   }, [planned, storageReady]);
 
   const handleSessionExpired = useCallback(() => {
-    setAuthNotice("Your TSS session expired. Paste a fresh cookie to reconnect.");
+    setAuthNotice(
+      "Your TSS login was rejected. Paste a fresh SAP_SESSIONID_S4P_500 value.",
+    );
     setAuth("disconnected");
   }, []);
 

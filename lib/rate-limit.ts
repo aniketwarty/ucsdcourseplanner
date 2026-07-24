@@ -15,7 +15,7 @@ const LIMITS: Record<
   RateLimitKind,
   { requests: number; window: `${number} ${"s" | "m" | "h" | "d"}` }
 > = {
-  auth: { requests: 10, window: "10 m" },
+  auth: { requests: 30, window: "10 m" },
   search: { requests: 60, window: "1 m" },
   sections: { requests: 90, window: "1 m" },
 };

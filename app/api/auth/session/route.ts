@@ -8,7 +8,7 @@ import {
 } from "@/lib/api/responses";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSessionStore } from "@/lib/session/store";
-import { normalizeTssCookie } from "@/lib/tss/auth";
+import { normalizeTssCookie, MAX_COOKIE_HEADER_LENGTH } from "@/lib/tss/auth";
 import { TssClient } from "@/lib/tss/client";
 import { SESSION_COOKIE_NAME } from "@/lib/tss/constants";
 import { AppError, isSessionExpiredError } from "@/lib/tss/errors";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 const authBodySchema = z
   .object({
-    cookie: z.string().min(1).max(8_192),
+    cookie: z.string().min(1).max(MAX_COOKIE_HEADER_LENGTH),
   })
   .strict();
 

@@ -21,12 +21,10 @@ export class ConfigurationError extends AppError {
 }
 
 export class SessionExpiredError extends AppError {
-  constructor() {
-    super(
-      "SESSION_EXPIRED",
-      "Your UCSD session has expired. Please connect again.",
-      401,
-    );
+  constructor(
+    message = "Your UCSD login was rejected. Sign in at tss.ucsd.edu/fiori, then paste a fresh SAP_SESSIONID_S4P_500 value.",
+  ) {
+    super("SESSION_EXPIRED", message, 401);
     this.name = "SessionExpiredError";
   }
 }
