@@ -339,7 +339,7 @@ export function CourseSearch({
                 <p className="no-sections">
                   {hiddenCount > 0
                     ? "All listed sections conflict with your plan."
-                    : "No section packages are currently listed."}
+                    : "No classes are currently listed."}
                 </p>
               ) : null}
 

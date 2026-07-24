@@ -118,6 +118,7 @@ a:hover {
 .plan-pane-header,
 .plan-stats,
 .plan-footer-actions,
+.plan-footer-main,
 .course-block-heading,
 .plan-list-course {
   display: flex;
@@ -838,7 +839,7 @@ a:hover {
 .plan-list-head,
 .plan-list-row {
   display: grid;
-  grid-template-columns: 1.7fr 52px 1fr 1.25fr 0.9fr 1.15fr 38px;
+  grid-template-columns: 1.7fr 52px 1fr 1.25fr 0.9fr 1.15fr 72px 38px;
   gap: 10px;
   align-items: center;
   padding: 12px 14px;
@@ -909,6 +910,38 @@ a:hover {
   font-variant-numeric: tabular-nums;
 }
 
+.plan-list-enroll {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--cobalt);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.plan-list-enroll:hover {
+  border-color: color-mix(in srgb, var(--cobalt) 35%, var(--line));
+  background: #f3f8fb;
+}
+
+.plan-list-enroll.is-disabled {
+  border-color: transparent;
+  color: #b0b7c1;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
 .plan-list-remove {
   width: 26px;
   height: 26px;
@@ -926,14 +959,22 @@ a:hover {
 }
 
 .plan-pane-footer {
-  padding: 14px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 20px 16px;
   border-top: 1px solid var(--line);
   background: var(--surface-soft);
 }
 
+.plan-footer-main {
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .plan-stats {
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .plan-stats > div {
@@ -973,6 +1014,7 @@ a:hover {
 
 .plan-footer-actions {
   gap: 8px;
+  flex: none;
 }
 
 .text-button {
@@ -1029,16 +1071,18 @@ a:hover {
   opacity: 0.45;
 }
 
-.plan-footer-actions > .primary-button,
-.plan-footer-actions > .secondary-button {
-  flex: 1;
+.project-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
-.handoff-copy {
-  margin: 10px 2px 0;
-  color: var(--faint);
+.project-link-button {
+  min-height: 32px;
+  padding: 0 10px;
   font-size: 11px;
-  line-height: 1.45;
+  font-weight: 650;
 }
 
 .calendar-shell {
@@ -1475,27 +1519,6 @@ a:hover {
   font-weight: 680;
 }
 
-.project-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-}
-
-.project-links a {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: rgb(255 255 255 / 72%);
-  font-size: 11px;
-  font-weight: 560;
-  text-decoration: none;
-}
-
-.project-links a:hover {
-  color: #fff;
-}
-
 .secret-field {
   position: relative;
 }
@@ -1870,12 +1893,6 @@ a:hover {
     flex-wrap: wrap;
   }
 
-  .project-links {
-    order: 3;
-    width: 100%;
-    padding-top: 4px;
-  }
-
   .connection-status {
     margin-left: auto;
   }
@@ -1895,7 +1912,7 @@ a:hover {
 
   .plan-list-head,
   .plan-list-row {
-    grid-template-columns: 1.4fr 44px 1fr 38px;
+    grid-template-columns: 1.4fr 44px 1fr 72px 38px;
   }
 
   .plan-list-head span:nth-child(4),
@@ -1967,6 +1984,10 @@ a:hover {
   .meeting-detail-head span:last-child,
   .meeting-loc {
     display: none;
+  }
+
+  .plan-footer-main {
+    flex-wrap: wrap;
   }
 
   .plan-footer-actions {

@@ -17,7 +17,6 @@ import { ConnectionPanel } from "./ConnectionPanel";
 import { CourseSearch } from "./CourseSearch";
 import { Icon } from "./Icons";
 import { PlanPane, type PlanView } from "./PlanPane";
-import { ProjectLinks } from "./ProjectLinks";
 
 type AuthState = "checking" | "connected" | "disconnected";
 
@@ -134,7 +133,6 @@ export function PlannerApp() {
         </div>
 
         <div className="header-actions">
-          <ProjectLinks />
           <div
             className={`connection-status ${auth === "connected" ? "is-connected" : ""}`}
             role="status"

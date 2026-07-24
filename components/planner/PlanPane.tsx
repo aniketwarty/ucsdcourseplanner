@@ -11,8 +11,10 @@ import {
   totalCredits,
   type PlannedPackage,
 } from "@/lib/planner";
+import { buildPlannedPackageEnrollUrl } from "@/lib/tss/enroll";
 import type { AcademicTerm } from "@/lib/tss/terms";
 import { Icon } from "./Icons";
+import { ProjectLinks } from "./ProjectLinks";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 
 export type PlanView = "list" | "calendar" | "finals";
@@ -104,11 +106,13 @@ export function PlanPane({
                 <span>Meets</span>
                 <span>Location</span>
                 <span>Final</span>
+                <span>Enroll</span>
                 <span />
               </div>
               {planned.map((item) => {
                 const color = courseColor(item.course.moduleId);
                 const hasConflict = conflicts.has(item.id);
+                const enrollUrl = buildPlannedPackageEnrollUrl(item);
                 return (
                   <div
                     className={`plan-list-row ${hasConflict ? "has-conflict" : ""}`}
@@ -131,6 +135,21 @@ export function PlanPane({
                     <div className="tabular">{sectionTimeSummary(item.section)}</div>
                     <div>{sectionLocation(item.section)}</div>
                     <div className="tabular">{formatFinalLabel(item.section)}</div>
+                    {enrollUrl ? (
+                      <a
+                        aria-label={`Enroll in ${item.course.courseAbbr} ${item.section.label} on TSS`}
+                        className="plan-list-enroll"
+                        href={enrollUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                        title="Open enrollment on TSS"
+                      >
+                        Enroll
+                        <Icon name="external" size={12} />
+                      </a>
+                    ) : (
+                      <span className="plan-list-enroll is-disabled">Enroll</span>
+                    )}
                     <button
                       aria-label={`Remove ${item.course.courseAbbr} ${item.section.label}`}
                       className="plan-list-remove"
@@ -167,52 +186,43 @@ export function PlanPane({
       </div>
 
       <div className="plan-pane-footer">
-        <div className="plan-stats">
-          <div>
-            <strong>{Number.isInteger(credits) ? credits : credits.toFixed(1)}</strong>
-            <span>units</span>
-          </div>
-          <div>
-            <strong>{planned.length}</strong>
-            <span>{planned.length === 1 ? "package" : "packages"}</span>
-          </div>
-          {conflicts.size > 0 ? (
-            <div className="plan-conflict-badge" role="status">
-              <Icon name="alert" size={14} />
-              {conflicts.size} conflict{conflicts.size === 1 ? "" : "s"}
+        <div className="plan-footer-main">
+          <div className="plan-stats">
+            <div>
+              <strong>{Number.isInteger(credits) ? credits : credits.toFixed(1)}</strong>
+              <span>units</span>
             </div>
-          ) : null}
+            <div>
+              <strong>{planned.length}</strong>
+              <span>{planned.length === 1 ? "class" : "classes"}</span>
+            </div>
+            {conflicts.size > 0 ? (
+              <div className="plan-conflict-badge" role="status">
+                <Icon name="alert" size={14} />
+                {conflicts.size} conflict{conflicts.size === 1 ? "" : "s"}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="plan-footer-actions">
+            {planned.length > 0 ? (
+              <button className="text-button danger" onClick={onClear} type="button">
+                Clear
+              </button>
+            ) : null}
+            <button
+              className="secondary-button"
+              disabled={planned.length === 0}
+              onClick={exportCalendar}
+              type="button"
+            >
+              <Icon name="download" size={15} />
+              Export .ics
+            </button>
+          </div>
         </div>
 
-        <div className="plan-footer-actions">
-          {planned.length > 0 ? (
-            <button className="text-button danger" onClick={onClear} type="button">
-              Clear
-            </button>
-          ) : null}
-          <button
-            className="secondary-button"
-            disabled={planned.length === 0}
-            onClick={exportCalendar}
-            type="button"
-          >
-            <Icon name="download" size={15} />
-            Export .ics
-          </button>
-          <a
-            className="primary-button"
-            href="https://tss.ucsd.edu/fiori"
-            rel="noreferrer"
-            target="_blank"
-          >
-            Enroll on TSS
-            <Icon name="external" size={14} />
-          </a>
-        </div>
-        <p className="handoff-copy">
-          Your plan is not an enrollment. TSS opens in a new tab so you can verify
-          availability and enroll there.
-        </p>
+        <ProjectLinks />
       </div>
     </section>
   );
