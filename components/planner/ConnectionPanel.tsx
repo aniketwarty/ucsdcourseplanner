@@ -197,43 +197,11 @@ export function ConnectionPanel({
         </div>
 
         <div className="devtools-illustration" aria-hidden="true">
-          <div className="browser-chrome">
-            <span />
-            <span />
-            <span />
-            <div className="address-bar">tss.ucsd.edu/fiori</div>
-          </div>
-          <div className="devtools-tabs">
-            <span>Elements</span>
-            <span>Console</span>
-            <span className="active">Application</span>
-          </div>
-          <div className="devtools-body">
-            <div className="cookie-tree">
-              <small>STORAGE</small>
-              <div>▾ Cookies</div>
-              <div className="tree-child">tss.ucsd.edu</div>
-            </div>
-            <div className="cookie-table">
-              <div className="table-header">
-                <span>Name</span>
-                <span>Value</span>
-              </div>
-              <div className="table-row selected">
-                <span>SAP_SESSIONID_…</span>
-                <span>••••••••••</span>
-              </div>
-              <div className="table-row">
-                <span>sap-usercontext</span>
-                <span>••••••</span>
-              </div>
-              <div className="copy-callout">
-                <Icon name="check" size={14} />
-                Copy value
-              </div>
-            </div>
-          </div>
-          <p className="illustration-caption">Illustration only — no credential shown</p>
+          <img
+            alt=""
+            className="connection-instructions-image"
+            src="/connection_instructions.jpg"
+          />
         </div>
       </section>
     </div>
