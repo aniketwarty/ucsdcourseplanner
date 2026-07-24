@@ -124,6 +124,17 @@ a:hover {
   align-items: center;
 }
 
+.brand {
+  gap: 12px;
+}
+
+.brand-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
 .brand > div {
   display: flex;
   flex-direction: column;

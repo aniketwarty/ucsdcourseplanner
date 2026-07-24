@@ -309,6 +309,13 @@ export function PlannerApp() {
     <div className="planner-app">
       <header className="topbar">
         <div className="brand">
+          <img
+            alt=""
+            className="brand-icon"
+            height={36}
+            src="/ucsd-course-planner-icon.svg"
+            width={36}
+          />
           <div>
             <span className="brand-eyebrow">UC San Diego</span>
             <strong>Schedule Planner</strong>

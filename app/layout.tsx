@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   description:
     "Build a conflict-aware weekly plan from live UC San Diego course sections.",
   applicationName: "UCSD Schedule Planner",
+  icons: {
+    icon: "/ucsd-course-planner-icon.svg",
+    apple: "/ucsd-course-planner-icon.svg",
+  },
 };
 
 export default function RootLayout({
