@@ -12,4 +12,4 @@ export const TSS_TIMEOUT_MS = 10_000;
 export const COURSE_RESULT_LIMIT = 30;
 
 export const SESSION_COOKIE_NAME = "ucsd_planner_session";
-export const SESSION_TTL_SECONDS = 30 * 60;
+export const SESSION_TTL_SECONDS = 2 * 60 * 60;
