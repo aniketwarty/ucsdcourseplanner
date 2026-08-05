@@ -4,8 +4,12 @@ import { z } from "zod";
 import {
   clearSessionCookie,
   errorResponse,
+  setSessionCookie,
 } from "@/lib/api/responses";
-import { requireRequestSession } from "@/lib/api/session";
+import {
+  requireRequestSession,
+  runWithLiveCredentials,
+} from "@/lib/api/session";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSessionStore } from "@/lib/session/store";
 import { TssClient } from "@/lib/tss/client";
@@ -48,12 +52,16 @@ export async function GET(request: NextRequest) {
     }
 
     const term = resolveTerm(request.nextUrl.searchParams);
-    const courses = await new TssClient().searchCourses(
-      parsed.data,
-      session.credentials,
-      term,
+    const client = new TssClient();
+    const { value: courses, refreshed } = await runWithLiveCredentials(
+      sessionStore,
+      session,
+      client,
+      (credentials) => client.searchCourses(parsed.data, credentials, term),
     );
-    return NextResponse.json<CourseSearchResponse>({ courses });
+    const response = NextResponse.json<CourseSearchResponse>({ courses });
+    if (refreshed) setSessionCookie(response, session.sessionId);
+    return response;
   } catch (error) {
     const response = errorResponse(error);
     if (isSessionExpiredError(error)) {

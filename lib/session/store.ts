@@ -19,6 +19,7 @@ const SESSION_KEY_PREFIX = "ucsd-planner:session:";
 export interface SessionStore {
   create(credentials: TssCredentials): Promise<string>;
   get(sessionId: string): Promise<TssCredentials | null>;
+  update(sessionId: string, credentials: TssCredentials): Promise<void>;
   delete(sessionId: string): Promise<void>;
 }
 
@@ -61,6 +62,16 @@ export class EncryptedSessionStore implements SessionStore {
         ? (JSON.parse(stored) as EncryptedEnvelope)
         : stored;
     return decryptCredentials(envelope);
+  }
+
+  async update(sessionId: string, credentials: TssCredentials): Promise<void> {
+    if (!isValidSessionId(sessionId)) return;
+    const envelope = encryptCredentials(credentials);
+    await this.storage.set(
+      sessionKey(sessionId),
+      JSON.stringify(envelope),
+      { ex: this.ttlSeconds },
+    );
   }
 
   async delete(sessionId: string): Promise<void> {

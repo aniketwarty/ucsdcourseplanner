@@ -3,8 +3,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   clearSessionCookie,
   errorResponse,
+  setSessionCookie,
 } from "@/lib/api/responses";
-import { requireRequestSession } from "@/lib/api/session";
+import {
+  requireRequestSession,
+  runWithLiveCredentials,
+} from "@/lib/api/session";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSessionStore } from "@/lib/session/store";
 import { TssClient } from "@/lib/tss/client";
@@ -30,11 +34,16 @@ export async function GET(request: NextRequest) {
     const session = await requireRequestSession(request, sessionStore);
 
     const term = resolveTerm(request.nextUrl.searchParams);
-    const appointments = await new TssClient().getAppointmentTimes(
-      session.credentials,
-      term,
+    const client = new TssClient();
+    const { value: appointments, refreshed } = await runWithLiveCredentials(
+      sessionStore,
+      session,
+      client,
+      (credentials) => client.getAppointmentTimes(credentials, term),
     );
-    return NextResponse.json<AppointmentTimesResponse>(appointments);
+    const response = NextResponse.json<AppointmentTimesResponse>(appointments);
+    if (refreshed) setSessionCookie(response, session.sessionId);
+    return response;
   } catch (error) {
     const response = errorResponse(error);
     if (isSessionExpiredError(error)) {
