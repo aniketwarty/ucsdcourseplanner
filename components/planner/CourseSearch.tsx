@@ -22,7 +22,7 @@ type CourseSearchProps = {
   onSessionExpired: () => void;
 };
 
-type ApiError = { error?: { code?: string; message?: string } };
+type ApiError = { error?: { code?: string; message?: string; detail?: string } };
 
 const DAY_LABEL: Record<string, string> = {
   MO: "Mon",
@@ -70,6 +70,7 @@ export function CourseSearch({
   const [courses, setCourses] = useState<Course[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [searchErrorDetail, setSearchErrorDetail] = useState("");
   const [searched, setSearched] = useState(false);
   const [hideConflicts, setHideConflicts] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -90,6 +91,7 @@ export function CourseSearch({
     setExpandedKey(null);
     setSearched(false);
     setSearchError("");
+    setSearchErrorDetail("");
     if (disabled) setQuery("");
   }, [term.id, disabled]);
 
@@ -99,6 +101,7 @@ export function CourseSearch({
       setSearched(false);
       setSearching(false);
       setSearchError("");
+      setSearchErrorDetail("");
       return;
     }
     const trimmed = query.trim();
@@ -107,6 +110,7 @@ export function CourseSearch({
       setSearched(false);
       setSearching(false);
       setSearchError("");
+      setSearchErrorDetail("");
       return;
     }
     const delay = skipSearchDebounce.current ? 0 : 350;
@@ -115,6 +119,7 @@ export function CourseSearch({
     const timer = window.setTimeout(async () => {
       setSearching(true);
       setSearchError("");
+      setSearchErrorDetail("");
       try {
         const params = new URLSearchParams({
           q: trimmed,
@@ -131,7 +136,11 @@ export function CourseSearch({
             onSessionExpired();
             return;
           }
-          throw new Error(body.error?.message || "Course search failed.");
+          setCourses([]);
+          setSearched(true);
+          setSearchError(body.error?.message || "Course search failed.");
+          setSearchErrorDetail(body.error?.detail || "");
+          return;
         }
         const body = (await response.json()) as { courses?: Course[] };
         setCourses(Array.isArray(body.courses) ? body.courses : []);
@@ -146,6 +155,7 @@ export function CourseSearch({
             ? error.message
             : "Could not search courses. Please try again.",
         );
+        setSearchErrorDetail("");
       } finally {
         if (!controller.signal.aborted) setSearching(false);
       }
@@ -166,6 +176,7 @@ export function CourseSearch({
   function forceSearch() {
     if (disabled || query.trim().length < 2) return;
     setSearchError("");
+    setSearchErrorDetail("");
     skipSearchDebounce.current = true;
     setSearchNonce((current) => current + 1);
   }
@@ -345,9 +356,12 @@ export function CourseSearch({
         {!disabled && searchError ? (
           <div className="inline-state error-state" role="alert">
             <Icon name="alert" />
-            <div>
+            <div className="error-state-copy">
               <strong>Search unavailable</strong>
               <p>{searchError}</p>
+              {searchErrorDetail ? (
+                <p className="error-state-detail">{searchErrorDetail}</p>
+              ) : null}
             </div>
           </div>
         ) : null}

@@ -31,6 +31,11 @@ export function escapeODataString(value: string): string {
   return value.replaceAll("'", "''");
 }
 
+/** TSS $filter / Term IDs use a 3-digit AcademicPeriod (Fall = 002). */
+export function formatAcademicPeriod(period: number): string {
+  return String(period).padStart(3, "0");
+}
+
 export function buildCourseSearchPath(
   query: string,
   term: AcademicTerm,
@@ -40,8 +45,8 @@ export function buildCourseSearchPath(
     .replaceAll("\\", "\\\\")
     .replaceAll('"', '\\"');
   const filter =
-    `AcYearText eq '${escapeODataString(term.academicYearText)}' ` +
-    `and AcademicPeriodText eq '${escapeODataString(term.academicPeriodText)}'`;
+    `AcademicYear eq '${term.academicYear}' ` +
+    `and AcademicPeriod eq '${formatAcademicPeriod(term.academicPeriod)}'`;
 
   const params = new URLSearchParams({
     "sap-client": SAP_CLIENT,
@@ -71,19 +76,26 @@ export function buildSectionsPath(
 export function buildBatchBody(
   relativePath: string,
   boundary: string,
+  csrfToken?: string,
 ): string {
-  return [
-    `--${boundary}`,
-    "Content-Type: application/http",
-    "Content-Transfer-Encoding: binary",
-    "",
+  // Match Fiori's compact multipart/http framing (no spaces after header colons).
+  const embeddedHeaders = [
     `GET ${relativePath} HTTP/1.1`,
     "Accept:application/json;odata.metadata=minimal;IEEE754Compatible=true",
-    "Accept-Language:en-US",
+    "Accept-Language:en",
+    ...(csrfToken ? [`X-CSRF-Token:${csrfToken}`] : []),
     "Content-Type:application/json;charset=UTF-8;IEEE754Compatible=true",
+  ];
+
+  return [
+    `--${boundary}`,
+    "Content-Type:application/http",
+    "Content-Transfer-Encoding:binary",
+    "",
+    ...embeddedHeaders,
     "",
     "",
     `--${boundary}--`,
-    "",
+    "Group ID: $auto.Workers",
   ].join("\r\n");
 }

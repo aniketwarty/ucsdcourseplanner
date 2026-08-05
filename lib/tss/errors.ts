@@ -30,13 +30,15 @@ export class SessionExpiredError extends AppError {
 }
 
 export class UpstreamError extends AppError {
-  constructor() {
-    super(
-      "UPSTREAM_ERROR",
-      "The UCSD service is temporarily unavailable.",
-      502,
-    );
+  constructor(
+    public readonly detail?: string,
+    message = "The UCSD service is temporarily unavailable.",
+  ) {
+    super("UPSTREAM_ERROR", message, 502);
     this.name = "UpstreamError";
+    if (detail) {
+      console.error(`[tss] upstream error: ${detail}`);
+    }
   }
 }
 

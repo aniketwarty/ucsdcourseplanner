@@ -407,12 +407,18 @@ a:hover {
 }
 
 .inline-state.error-state {
-  min-height: 150px;
-  padding: 20px;
+  min-height: 0;
+  align-items: flex-start;
+  padding: 16px 18px;
   color: var(--danger);
   flex-direction: row;
   gap: 10px;
   text-align: left;
+}
+
+.error-state-copy {
+  min-width: 0;
+  flex: 1;
 }
 
 .error-state strong {
@@ -421,7 +427,21 @@ a:hover {
 }
 
 .error-state p {
+  max-width: none;
   margin-top: 3px;
+}
+
+.error-state-detail {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--danger) 8%, #fff);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .course-block {

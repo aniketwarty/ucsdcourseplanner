@@ -58,6 +58,8 @@ export interface SectionGroup {
 export interface ErrorDetail {
   code: string;
   message: string;
+  /** Present only in development when an upstream failure is diagnosed. */
+  detail?: string;
 }
 
 export interface ErrorResponse {

@@ -11,7 +11,11 @@ export function getMultipartBoundary(contentType: string | null): string {
     /(?:^|;)\s*boundary=(?:"([^"]+)"|([^;\s]+))/i,
   );
   const boundary = match?.[1] ?? match?.[2];
-  if (!boundary) throw new UpstreamError();
+  if (!boundary) {
+    throw new UpstreamError(
+      `batch: missing multipart boundary (ct=${contentType ?? "none"})`,
+    );
+  }
   return boundary;
 }
 
@@ -51,9 +55,13 @@ export function parseMultipartHttpResponses(
     if (!statusMatch || statusMatch.index === undefined) continue;
 
     const responseStart = partBody.indexOf("HTTP/", statusMatch.index);
-    if (responseStart < 0) throw new UpstreamError();
+    if (responseStart < 0) {
+      throw new UpstreamError("batch: embedded HTTP status line incomplete");
+    }
     const statusLineEnd = partBody.indexOf("\n", responseStart);
-    if (statusLineEnd < 0) throw new UpstreamError();
+    if (statusLineEnd < 0) {
+      throw new UpstreamError("batch: embedded HTTP headers incomplete");
+    }
 
     const afterStatus = partBody.slice(statusLineEnd + 1);
     const responseBreak = findHeaderBreak(afterStatus);
@@ -73,7 +81,11 @@ export function parseMultipartHttpResponses(
     });
   }
 
-  if (responses.length === 0) throw new UpstreamError();
+  if (responses.length === 0) {
+    throw new UpstreamError(
+      `batch: no embedded HTTP responses (payload=${snippet(payload)})`,
+    );
+  }
   return responses;
 }
 
@@ -88,13 +100,17 @@ export function parseBatchJson(payload: string, contentType: string | null): unk
     throw new SessionExpiredError();
   }
   if (response.status < 200 || response.status >= 300) {
-    throw new UpstreamError();
+    throw new UpstreamError(
+      `batch embedded HTTP ${response.status}: ${snippet(response.body)}`,
+    );
   }
 
   try {
     return JSON.parse(response.body) as unknown;
   } catch {
-    throw new UpstreamError();
+    throw new UpstreamError(
+      `batch: embedded body is not JSON: ${snippet(response.body)}`,
+    );
   }
 }
 
@@ -120,4 +136,9 @@ function parseHeaders(headerBlock: string): Record<string, string> {
       .trim();
   }
   return headers;
+}
+
+function snippet(value: string, max = 240): string {
+  const compact = value.replace(/\s+/g, " ").trim();
+  return compact.length <= max ? compact : `${compact.slice(0, max)}…`;
 }

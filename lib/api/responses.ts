@@ -11,10 +11,19 @@ import type { ErrorResponse } from "@/lib/tss/types";
 
 export function errorResponse(error: unknown): NextResponse<ErrorResponse> {
   if (error instanceof AppError) {
-    return NextResponse.json(
-      { error: { code: error.code, message: error.message } },
-      { status: error.status },
-    );
+    const body: ErrorResponse = {
+      error: { code: error.code, message: error.message },
+    };
+    // Surface diagnostic detail only in development to aid debugging.
+    if (
+      process.env.NODE_ENV === "development" &&
+      "detail" in error &&
+      typeof (error as { detail?: unknown }).detail === "string" &&
+      (error as { detail: string }).detail
+    ) {
+      body.error.detail = (error as { detail: string }).detail;
+    }
+    return NextResponse.json(body, { status: error.status });
   }
 
   return NextResponse.json(

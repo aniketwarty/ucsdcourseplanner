@@ -53,7 +53,7 @@ export class TssClient {
         }),
       },
     );
-    assertAuthenticatedUpstream(response);
+    assertAuthenticatedUpstream(response, "csrf");
 
     const csrfToken = response.headers.get("x-csrf-token");
     if (!csrfToken) throw new SessionExpiredError();
@@ -72,27 +72,36 @@ export class TssClient {
     credentials: TssCredentials,
     term: AcademicTerm,
   ): Promise<Course[]> {
-    const boundary = `batch_${randomUUID().replaceAll("-", "")}`;
-    const body = buildBatchBody(buildCourseSearchPath(query, term), boundary);
+    const boundary = `batch_id-${Date.now()}-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+    const path = buildCourseSearchPath(query, term);
+    const body = buildBatchBody(path, boundary, credentials.csrfToken);
     const response = await this.request(
       `${TSS_BASE_URL}/$batch?sap-client=${SAP_CLIENT}`,
       {
         method: "POST",
         headers: this.headers({
           Accept: "multipart/mixed",
+          "Accept-Language": "en",
           "Content-Type": `multipart/mixed; boundary=${boundary}`,
+          "MIME-Version": "1.0",
+          "OData-MaxVersion": "4.0",
+          "OData-Version": "4.0",
           Cookie: credentials.cookie,
           "X-CSRF-Token": credentials.csrfToken,
         }),
         body,
       },
     );
-    assertAuthenticatedUpstream(response);
+    assertAuthenticatedUpstream(response, "course-search");
 
     const payload = parseBatchJson(
       await response.text(),
       response.headers.get("content-type"),
     );
+    const odataError = extractODataError(payload);
+    if (odataError) {
+      throw new UpstreamError(`course-search: ${odataError}`);
+    }
     return mapCourses(payload, term).slice(0, COURSE_RESULT_LIMIT);
   }
 
@@ -112,7 +121,7 @@ export class TssClient {
         }),
       },
     );
-    assertAuthenticatedUpstream(response);
+    assertAuthenticatedUpstream(response, "sections");
 
     const contentType = response.headers.get("content-type") ?? "";
     if (contentType.includes("text/html")) {
@@ -125,7 +134,9 @@ export class TssClient {
       if (error instanceof UpstreamError || error instanceof SessionExpiredError) {
         throw error;
       }
-      throw new UpstreamError();
+      throw new UpstreamError(
+        `sections-parse: ${error instanceof Error ? error.message : "unknown"}`,
+      );
     }
   }
 
@@ -162,8 +173,12 @@ export class TssClient {
         redirect: "manual",
         signal: AbortSignal.timeout(TSS_TIMEOUT_MS),
       });
-    } catch {
-      throw new UpstreamError();
+    } catch (error) {
+      const reason =
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : "unknown network error";
+      throw new UpstreamError(`fetch failed for ${url}: ${reason}`);
     }
   }
 }
@@ -242,7 +257,11 @@ export function mapCourses(data: unknown, term: AcademicTerm): Course[] {
     .filter((course): course is Course => course !== null);
 }
 
-function assertAuthenticatedUpstream(response: Response): void {
+function assertAuthenticatedUpstream(
+  response: Response,
+  stage = "upstream",
+  bodyText?: string,
+): void {
   if (response.status === 401 || response.status === 403) {
     throw new SessionExpiredError();
   }
@@ -254,7 +273,39 @@ function assertAuthenticatedUpstream(response: Response): void {
   if (contentType.includes("text/html")) {
     throw new SessionExpiredError();
   }
-  if (!response.ok) throw new UpstreamError();
+  if (!response.ok) {
+    let detail = `${stage}: HTTP ${response.status} ct=${contentType || "none"}`;
+    if (bodyText) {
+      try {
+        const parsed = JSON.parse(bodyText) as unknown;
+        const odataError = extractODataError(parsed);
+        if (odataError) detail = `${stage}: ${odataError}`;
+        else detail = `${detail} body=${snippet(bodyText)}`;
+      } catch {
+        detail = `${detail} body=${snippet(bodyText)}`;
+      }
+    }
+    throw new UpstreamError(detail);
+  }
+}
+
+function extractODataError(data: unknown): string | null {
+  if (!isRecord(data) || !isRecord(data.error)) return null;
+  const code =
+    typeof data.error.code === "string" ? data.error.code : "unknown";
+  const message =
+    typeof data.error.message === "string"
+      ? data.error.message
+      : isRecord(data.error.message) &&
+          typeof data.error.message.value === "string"
+        ? data.error.message.value
+        : JSON.stringify(data.error).slice(0, 400);
+  return `${code}: ${message}`;
+}
+
+function snippet(value: string, max = 240): string {
+  const compact = value.replace(/\s+/g, " ").trim();
+  return compact.length <= max ? compact : `${compact.slice(0, max)}…`;
 }
 
 function extractRecords(data: unknown): TssRecord[] {
