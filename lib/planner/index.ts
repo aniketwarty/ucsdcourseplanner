@@ -451,20 +451,27 @@ export type ConflictScope = "classes" | "finals" | "all";
 
 function meetingsForConflictScope(
   section: SectionGroup,
-  scope: ConflictScope,
+  scope: Exclude<ConflictScope, "all">,
 ): Meeting[] {
   if (scope === "classes") return section.meetings;
-  if (scope === "finals") {
-    const exam = finalMeeting(section);
-    return exam ? [exam] : [];
-  }
-  return scheduleMeetings(section);
+  const exam = finalMeeting(section);
+  return exam ? [exam] : [];
 }
 
 export function detectConflicts(
   packages: PlannedPackage[],
   scope: ConflictScope = "all",
 ): Set<string> {
+  // "all" = class conflicts ∪ final conflicts. Do not compare finals against
+  // other courses' lectures — instruction dates often run into finals week and
+  // that produces false positives for back-to-back weekday classes.
+  if (scope === "all") {
+    return new Set([
+      ...detectConflicts(packages, "classes"),
+      ...detectConflicts(packages, "finals"),
+    ]);
+  }
+
   const conflicts = new Set<string>();
   for (let left = 0; left < packages.length; left += 1) {
     for (let right = left + 1; right < packages.length; right += 1) {
