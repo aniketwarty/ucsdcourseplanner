@@ -15,6 +15,7 @@ import {
   isSameTerm,
 } from "@/lib/tss/terms";
 import { ConnectionPanel } from "./ConnectionPanel";
+import { AppointmentTimesPanel } from "./AppointmentTimesPanel";
 import { CourseSearch } from "./CourseSearch";
 import { Icon } from "./Icons";
 import { PlanPane, type PlanView } from "./PlanPane";
@@ -60,6 +61,7 @@ export function PlannerApp() {
   const [appMessage, setAppMessage] = useState("");
   const [planView, setPlanView] = useState<PlanView>("calendar");
   const [syncing, setSyncing] = useState(false);
+  const [appointmentsOpen, setAppointmentsOpen] = useState(false);
   const syncedSessionRef = useRef(false);
   const plannedRef = useRef(planned);
   plannedRef.current = planned;
@@ -128,10 +130,15 @@ export function PlannerApp() {
   const handleSessionExpired = useCallback(() => {
     syncedSessionRef.current = false;
     writeSkipPreference(false);
+    setAppointmentsOpen(false);
     setAuthNotice(
       "Your TSS login was rejected. Paste a fresh SAP_SESSIONID_S4P_500 value.",
     );
     setAuth("disconnected");
+  }, []);
+
+  const closeAppointments = useCallback(() => {
+    setAppointmentsOpen(false);
   }, []);
 
   useEffect(() => {
@@ -278,6 +285,7 @@ export function PlannerApp() {
       if (!response.ok) throw new Error();
       syncedSessionRef.current = false;
       writeSkipPreference(false);
+      setAppointmentsOpen(false);
       setAuthNotice("Disconnected. Your course plan remains saved on this device.");
       setAuth("disconnected");
     } catch {
@@ -339,14 +347,24 @@ export function PlannerApp() {
                 : "TSS disconnected"}
           </div>
           {auth === "connected" ? (
-            <button
-              className="disconnect-button"
-              disabled={disconnecting}
-              onClick={disconnect}
-              type="button"
-            >
-              {disconnecting ? "Disconnecting…" : "Disconnect"}
-            </button>
+            <>
+              <button
+                className="disconnect-button"
+                onClick={() => setAppointmentsOpen(true)}
+                type="button"
+              >
+                <Icon name="clock" size={14} />
+                Appointment times
+              </button>
+              <button
+                className="disconnect-button"
+                disabled={disconnecting}
+                onClick={disconnect}
+                type="button"
+              >
+                {disconnecting ? "Disconnecting…" : "Disconnect"}
+              </button>
+            </>
           ) : null}
           {offline ? (
             <button className="disconnect-button" onClick={openConnect} type="button">
@@ -399,6 +417,12 @@ export function PlannerApp() {
         }}
         onSkip={skipConnect}
         open={auth === "disconnected"}
+      />
+      <AppointmentTimesPanel
+        onClose={closeAppointments}
+        onSessionExpired={handleSessionExpired}
+        open={appointmentsOpen && auth === "connected"}
+        term={term}
       />
     </div>
   );

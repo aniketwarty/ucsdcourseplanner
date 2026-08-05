@@ -77,3 +77,25 @@ export interface CourseSearchResponse {
 export interface SectionsResponse {
   sections: SectionGroup[];
 }
+
+export type AppointmentPassStatus = "upcoming" | "active" | "ended";
+
+export interface AppointmentPass {
+  id: string;
+  label: string;
+  beginTimestamp: string;
+  endTimestamp: string;
+  waitlists: string;
+  unitCap: string | null;
+  status: AppointmentPassStatus;
+  bkgWindow: string;
+}
+
+export interface AppointmentTimesResponse {
+  academicYearText: string;
+  academicSessionText: string;
+  passes: AppointmentPass[];
+  hasActiveHolds: boolean;
+  hasFutureHolds: boolean;
+  sessionNote: string;
+}

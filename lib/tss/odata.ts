@@ -73,6 +73,20 @@ export function buildSectionsPath(
   return `YUCSD_CON_MODULE(${keys})/_sections?sap-client=${SAP_CLIENT}&$skip=0&$top=1000`;
 }
 
+export function buildAppointmentPeriodsPath(term: AcademicTerm): string {
+  const filter =
+    `academicYear eq '${escapeODataString(String(term.academicYear))}' ` +
+    `and academicSession eq '${escapeODataString(String(term.academicPeriod))}'`;
+  const params = new URLSearchParams({
+    "sap-client": SAP_CLIENT,
+    "$expand": "appointmentTimes,maxUnits",
+    "$filter": filter,
+    "$skip": "0",
+    "$top": "100",
+  });
+  return `apptPeriods?${params.toString()}`;
+}
+
 export function buildBatchBody(
   relativePath: string,
   boundary: string,

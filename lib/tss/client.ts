@@ -10,6 +10,7 @@ import {
 import {
   COURSE_RESULT_LIMIT,
   SAP_CLIENT,
+  TSS_APPT_BASE_URL,
   TSS_BASE_URL,
   TSS_TIMEOUT_MS,
 } from "./constants";
@@ -19,13 +20,20 @@ import {
 } from "./errors";
 import { parseBatchJson } from "./multipart";
 import {
+  buildAppointmentPeriodsPath,
   buildBatchBody,
   buildCourseSearchPath,
   buildSectionsPath,
 } from "./odata";
 import { mapSectionGroups } from "./schedule";
 import type { AcademicTerm } from "./terms";
-import type { Course, SectionGroup } from "./types";
+import type {
+  AppointmentPass,
+  AppointmentPassStatus,
+  AppointmentTimesResponse,
+  Course,
+  SectionGroup,
+} from "./types";
 
 type TssRecord = Record<string, unknown>;
 
@@ -140,6 +148,42 @@ export class TssClient {
     }
   }
 
+  async getAppointmentTimes(
+    credentials: TssCredentials,
+    term: AcademicTerm,
+  ): Promise<AppointmentTimesResponse> {
+    const response = await this.request(
+      `${TSS_APPT_BASE_URL}/${buildAppointmentPeriodsPath(term)}`,
+      {
+        method: "GET",
+        headers: this.headers({
+          Accept:
+            "application/json;odata.metadata=minimal;IEEE754Compatible=true",
+          Cookie: credentials.cookie,
+          "X-CSRF-Token": credentials.csrfToken,
+        }),
+      },
+    );
+    assertAuthenticatedUpstream(response, "appointments");
+
+    const text = await response.text();
+    let payload: unknown;
+    try {
+      payload = JSON.parse(text) as unknown;
+    } catch {
+      throw new UpstreamError(
+        `appointments: non-JSON body ct=${response.headers.get("content-type")} body=${snippet(text)}`,
+      );
+    }
+
+    const odataError = extractODataError(payload);
+    if (odataError) {
+      throw new UpstreamError(`appointments: ${odataError}`);
+    }
+
+    return mapAppointmentTimes(payload, term);
+  }
+
   private async warmSessionCookies(cookie: string): Promise<string> {
     const response = await this.request(`${TSS_FIORI_REFERER}?sap-client=${SAP_CLIENT}`, {
       method: "GET",
@@ -181,6 +225,113 @@ export class TssClient {
       throw new UpstreamError(`fetch failed for ${url}: ${reason}`);
     }
   }
+}
+
+export function mapAppointmentTimes(
+  data: unknown,
+  term: AcademicTerm,
+  now: Date = new Date(),
+): AppointmentTimesResponse {
+  const periods = extractRecords(data);
+  const period = periods[0];
+  if (!period) {
+    return {
+      academicYearText: term.academicYearText,
+      academicSessionText: term.academicPeriodText,
+      passes: [],
+      hasActiveHolds: false,
+      hasFutureHolds: false,
+      sessionNote: "",
+    };
+  }
+
+  const academicYearText =
+    text(period, "academicYearText") || term.academicYearText;
+  const academicSessionText =
+    text(period, "academicSessionText", "academicSession_Text") ||
+    term.academicPeriodText;
+  const sessionPeriod = text(period, "academicSession") || String(term.academicPeriod);
+
+  const maxUnitsByTimelimit = new Map<string, string>();
+  const maxUnits = Array.isArray(period.maxUnits)
+    ? period.maxUnits.filter(isRecord)
+    : [];
+  for (const row of maxUnits) {
+    const perid = text(row, "Perid", "perid");
+    if (perid && perid !== sessionPeriod) continue;
+    const timelimit = text(row, "Timelimit", "timelimit");
+    const units = text(row, "MaxUnits", "maxUnits");
+    if (timelimit && units) maxUnitsByTimelimit.set(timelimit, units);
+  }
+
+  const appointmentTimes = Array.isArray(period.appointmentTimes)
+    ? period.appointmentTimes.filter(isRecord)
+    : [];
+
+  const passes: AppointmentPass[] = appointmentTimes
+    .map((record, index): AppointmentPass | null => {
+      const beginTimestamp = text(record, "beginTimestamp");
+      const endTimestamp = text(record, "endTimestamp");
+      if (!beginTimestamp || !endTimestamp) return null;
+
+      const timelimit = text(record, "timelimit");
+      const label =
+        text(record, "timelimit_Text", "timelimitText") ||
+        (timelimit ? `Pass ${timelimit}` : "Appointment");
+      const bkgWindow = text(record, "bkgWindow");
+
+      return {
+        id: `${timelimit || "pass"}-${beginTimestamp}-${index}`,
+        label,
+        beginTimestamp,
+        endTimestamp,
+        waitlists: text(record, "waitlists") || "—",
+        unitCap: timelimit
+          ? (maxUnitsByTimelimit.get(timelimit) ?? null)
+          : null,
+        status: passStatus(beginTimestamp, endTimestamp, now),
+        bkgWindow,
+      };
+    })
+    .filter((pass): pass is AppointmentPass => pass !== null)
+    .sort((a, b) => a.beginTimestamp.localeCompare(b.beginTimestamp));
+
+  const countCurrent = number(period, "countCurrent") ?? 0;
+  const countFuture = number(period, "countFuture") ?? 0;
+  const holdLevel = text(period, "holdLevel");
+
+  return {
+    academicYearText:
+      text(
+        appointmentTimes[0] ?? {},
+        "academicYear_Text",
+        "academicYearText",
+      ) || academicYearText,
+    academicSessionText:
+      text(
+        appointmentTimes[0] ?? {},
+        "academicSession_Text",
+        "academicSessionText",
+      ) || academicSessionText,
+    passes,
+    hasActiveHolds: countCurrent > 0 || Boolean(holdLevel),
+    hasFutureHolds: countFuture > 0,
+    sessionNote: text(period, "sessionNote"),
+  };
+}
+
+function passStatus(
+  beginTimestamp: string,
+  endTimestamp: string,
+  now: Date,
+): AppointmentPassStatus {
+  const begin = Date.parse(beginTimestamp);
+  const end = Date.parse(endTimestamp);
+  const current = now.getTime();
+  if (!Number.isFinite(begin) || !Number.isFinite(end)) return "upcoming";
+  if (current < begin) return "upcoming";
+  if (current > end) return "ended";
+  return "active";
 }
 
 export function mapCourses(data: unknown, term: AcademicTerm): Course[] {

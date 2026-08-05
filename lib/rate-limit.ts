@@ -9,7 +9,7 @@ import {
   isValidSessionId,
 } from "@/lib/session/store";
 
-export type RateLimitKind = "auth" | "search" | "sections";
+export type RateLimitKind = "auth" | "search" | "sections" | "appointments";
 
 const LIMITS: Record<
   RateLimitKind,
@@ -18,6 +18,7 @@ const LIMITS: Record<
   auth: { requests: 30, window: "10 m" },
   search: { requests: 60, window: "1 m" },
   sections: { requests: 90, window: "1 m" },
+  appointments: { requests: 30, window: "1 m" },
 };
 
 export async function enforceRateLimit(
