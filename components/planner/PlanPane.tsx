@@ -10,6 +10,7 @@ import {
   sectionTimeSummary,
   totalCredits,
   type PlannedPackage,
+  type SectionGroup,
 } from "@/lib/planner";
 import { buildPlannedPackageEnrollUrl } from "@/lib/tss/enroll";
 import type { AcademicTerm } from "@/lib/tss/terms";
@@ -33,6 +34,14 @@ function slugifyTerm(label: string): string {
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, "-")
     .replaceAll(/(^-|-$)/g, "");
+}
+
+function seatLabel(section: SectionGroup): string {
+  return `${Math.max(section.seatsAvailable, 0)} / ${section.capacity}`;
+}
+
+function waitlistLabel(section: SectionGroup): string {
+  return `WL ${Math.max(section.waitlistCount, 0)}`;
 }
 
 export function PlanPane({
@@ -122,6 +131,7 @@ export function PlanPane({
                 <span>Meets</span>
                 <span>Location</span>
                 <span>Final</span>
+                <span className="seat-chip-label">Seats / WL</span>
                 <span>Enroll</span>
                 <span />
               </div>
@@ -129,6 +139,7 @@ export function PlanPane({
                 const color = courseColor(item.course.moduleId);
                 const hasConflict = conflicts.has(item.id);
                 const enrollUrl = buildPlannedPackageEnrollUrl(item);
+                const open = item.section.seatsAvailable > 0;
                 return (
                   <div
                     className={`plan-list-row ${hasConflict ? "has-conflict" : ""}`}
@@ -151,6 +162,13 @@ export function PlanPane({
                     <div className="tabular">{sectionTimeSummary(item.section)}</div>
                     <div>{sectionLocation(item.section)}</div>
                     <div className="tabular">{formatFinalLabel(item.section)}</div>
+                    <span
+                      className={`seat-chip ${open ? "open" : "full"}`}
+                      title={`${seatLabel(item.section)} open · ${waitlistLabel(item.section)}`}
+                    >
+                      <span>{seatLabel(item.section)}</span>
+                      <small>{waitlistLabel(item.section)}</small>
+                    </span>
                     {enrollUrl ? (
                       <a
                         aria-label={`Enroll in ${item.course.courseAbbr} ${item.section.label} on TSS`}
