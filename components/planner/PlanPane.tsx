@@ -131,7 +131,7 @@ export function PlanPane({
                 <span>Meets</span>
                 <span>Location</span>
                 <span>Final</span>
-                <span className="seat-chip-label">Seats / WL</span>
+                <span className="seat-chip-label">Availability</span>
                 <span>Enroll</span>
                 <span />
               </div>

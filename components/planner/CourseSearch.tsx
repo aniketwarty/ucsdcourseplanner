@@ -453,7 +453,7 @@ export function CourseSearch({
                         <span className="section-expand-icon" />
                         <span>Instructor</span>
                         <span className="section-times-label">Meeting times</span>
-                        <span className="seat-chip-label">Seats / WL</span>
+                        <span className="seat-chip-label">Availability</span>
                       </div>
                       <span className="section-quick-add-spacer" />
                     </div>
