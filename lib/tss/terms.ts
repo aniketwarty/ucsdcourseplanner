@@ -139,6 +139,22 @@ function compareIso(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
+function midpointDate(start: string, end: string): string {
+  const [startYear, startMonth, startDay] = start.split("-").map(Number);
+  const [endYear, endMonth, endDay] = end.split("-").map(Number);
+  const startTime = Date.UTC(startYear, startMonth - 1, startDay);
+  const endTime = Date.UTC(endYear, endMonth - 1, endDay);
+  const halfDurationDays = Math.ceil(
+    (endTime - startTime) / (2 * 24 * 60 * 60 * 1000),
+  );
+  const midpoint = new Date(startTime + halfDurationDays * 24 * 60 * 60 * 1000);
+  return isoDate(
+    midpoint.getUTCFullYear(),
+    midpoint.getUTCMonth() + 1,
+    midpoint.getUTCDate(),
+  );
+}
+
 /** First Monday on or after an ISO date (UTC noon to avoid DST edge cases). */
 export function mondayOnOrAfter(iso: string): string {
   const [year, month, day] = iso.split("-").map(Number);
@@ -243,15 +259,18 @@ export function parseTermParams(
 }
 
 /**
- * The term underway on `now`, or the next upcoming TSS term when we are between
- * terms / before the TSS cutover.
+ * The term underway on `now` until its midpoint, then the next TSS term.
+ * Between terms / before the TSS cutover, use the next upcoming term.
  */
 export function getCurrentTerm(now: Date = new Date()): AcademicTerm {
   const today = isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
   const terms = listAvailableTerms(4);
 
-  for (const term of terms) {
+  for (const [index, term] of terms.entries()) {
     if (compareIso(term.termStart, today) <= 0 && compareIso(today, term.termEnd) <= 0) {
+      if (compareIso(today, midpointDate(term.termStart, term.termEnd)) >= 0) {
+        return terms[index + 1] ?? term;
+      }
       return term;
     }
   }

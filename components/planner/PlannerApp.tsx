@@ -11,6 +11,7 @@ import {
   type SectionGroup,
 } from "@/lib/planner";
 import {
+  findTerm,
   getCurrentTerm,
   isSameTerm,
 } from "@/lib/tss/terms";
@@ -52,7 +53,8 @@ function writeSkipPreference(skipped: boolean) {
 }
 
 export function PlannerApp() {
-  const term = useMemo(() => getCurrentTerm(), []);
+  const defaultTerm = useMemo(() => getCurrentTerm(), []);
+  const [selectedTermId, setSelectedTermId] = useState(defaultTerm.id);
   const [auth, setAuth] = useState<AuthState>("checking");
   const [authNotice, setAuthNotice] = useState("");
   const [planned, setPlanned] = useState<PlannedPackage[]>([]);
@@ -64,7 +66,29 @@ export function PlannerApp() {
   const [appointmentsOpen, setAppointmentsOpen] = useState(false);
   const syncedSessionRef = useRef(false);
   const plannedRef = useRef(planned);
-  plannedRef.current = planned;
+
+  useEffect(() => {
+    plannedRef.current = planned;
+  }, [planned]);
+
+  const termOptions = useMemo(() => {
+    const options = new Map([[defaultTerm.id, defaultTerm]]);
+    for (const item of planned) {
+      const savedTerm = findTerm(
+        Number(item.course.academicYear),
+        Number(item.course.academicPeriod),
+      );
+      if (savedTerm && savedTerm.termStart < defaultTerm.termStart) {
+        options.set(savedTerm.id, savedTerm);
+      }
+    }
+    return [...options.values()].sort((a, b) =>
+      b.termStart.localeCompare(a.termStart),
+    );
+  }, [defaultTerm, planned]);
+
+  const term =
+    termOptions.find((option) => option.id === selectedTermId) ?? defaultTerm;
 
   const termPlanned = useMemo(
     () => planned.filter((item) => isSameTerm(item.course, term)),
@@ -152,7 +176,9 @@ export function PlannerApp() {
       setSyncing(true);
       try {
         const snapshot = plannedRef.current;
-        const packages = snapshot.filter((item) => isSameTerm(item.course, term));
+        const packages = snapshot.filter((item) =>
+          isSameTerm(item.course, defaultTerm),
+        );
         if (packages.length === 0) {
           syncedSessionRef.current = true;
           return;
@@ -166,8 +192,8 @@ export function PlannerApp() {
         await Promise.all(
           moduleIds.map(async (moduleId) => {
             const params = new URLSearchParams({
-              year: String(term.academicYear),
-              period: String(term.academicPeriod),
+              year: String(defaultTerm.academicYear),
+              period: String(defaultTerm.academicPeriod),
             });
             const response = await fetch(
               `/api/courses/${encodeURIComponent(moduleId)}/sections?${params}`,
@@ -240,8 +266,7 @@ export function PlannerApp() {
       controller.abort();
     };
     // Only sync once per connected session after local plan is ready.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot on connect
-  }, [auth, storageReady, term, handleSessionExpired]);
+  }, [auth, storageReady, defaultTerm, handleSessionExpired]);
 
   function addPackage(course: Course, section: SectionGroup) {
     const next = makePackage(course, section);
@@ -371,9 +396,23 @@ export function PlannerApp() {
               Connect
             </button>
           ) : null}
-          <div className="term-badge" aria-label={`Planning term ${term.shortLabel}`}>
-            {term.shortLabel}
-          </div>
+          <select
+            aria-label="Planning term"
+            className="term-select"
+            onChange={(event) => {
+              const selected = termOptions.find(
+                (option) => option.id === event.target.value,
+              );
+              if (selected) setSelectedTermId(selected.id);
+            }}
+            value={term.id}
+          >
+            {termOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.shortLabel}
+              </option>
+            ))}
+          </select>
         </div>
       </header>
 
